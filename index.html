@@ -175,6 +175,110 @@
   .sheet-sign{position:relative}
   .sheet-sign .stamp-img{height:78px;vertical-align:middle;margin-left:-26px;position:relative;top:-6px}
 
+  /* ───────── 모바일 최적화 ───────── */
+  @media (max-width:760px){
+    html,body{overflow-x:hidden}
+    body{font-size:13px}
+
+    /* 상단바 — 터치 크기 확보 + 줄바꿈 */
+    .topbar{height:auto;flex-wrap:wrap;padding:7px 10px;gap:6px}
+    .topbar .brand{width:100%;gap:8px}
+    .brand-mark{font-size:15px}
+    .brand-team{font-size:11px}
+    .topbar .meta{margin-left:0;width:100%;gap:5px;justify-content:space-between}
+    .meta .qno{flex:1 1 auto;text-align:center;font-size:11.5px;padding:4px 8px}
+    #lastSaved{flex:1 1 100%;text-align:center;order:5}
+    .status-sel{min-height:36px;flex:0 0 auto}
+    .topbar .meta .btn{flex:1 1 auto;min-height:36px;padding:7px 8px;font-size:12px;text-align:center}
+
+    /* 워크스페이스 — 페이지 한 번만 스크롤(내부 스크롤 최소화로 화면 떨림 방지) */
+    .workspace{grid-template-columns:1fr;height:auto}
+    .editor{overflow:visible;height:auto;padding:10px 10px 22px}
+    .ledger{border-right:0;border-bottom:2px solid var(--line)}
+    .ledger-head{padding:10px 12px 8px}
+    .ledger-list{max-height:44vh}
+    .cat-tabs{padding:8px 12px;gap:4px}
+    .cat-tab{padding:4px 9px;font-size:11.5px}
+
+    /* 카드 간격 축소 */
+    .card{margin-bottom:10px;border-radius:8px}
+    .card-head{padding:9px 12px;flex-wrap:wrap;gap:5px;font-size:12px}
+    .card-body{padding:10px 12px}
+    .g4{grid-template-columns:1fr 1fr;gap:8px 10px}
+    .extras{grid-template-columns:1fr 1fr;gap:8px 10px}
+    .field input,.field select,.extra-field input,.extra-field select,
+    .list-head input,.gate-card input,
+    #fe_name,#fe_std,#fe_cond,#fe_unit{font-size:16px}
+
+    /* ── 시험항목 표 → 카드형 세로 배치 ── */
+    section.card > div[style*="overflow-x"]{overflow-x:visible}
+    table.lines thead{display:none}
+    table.lines, table.lines tbody{display:block;width:100%}
+    table.lines tr{display:block;border:1px solid var(--line);border-radius:8px;background:#fff;margin-bottom:8px;padding:6px 10px}
+    table.lines tr:hover td{background:transparent}
+    table.lines td{display:flex;align-items:center;gap:8px;border:0;padding:4px 0;width:100%}
+    table.lines td::before{content:attr(data-label);flex:0 0 54px;font-size:11px;font-weight:700;color:var(--ink-soft)}
+    table.lines td:first-child{border-bottom:1px solid var(--line-soft);padding-bottom:6px;margin-bottom:2px;color:var(--fiti-blue);font-weight:700}
+    table.lines td input{width:100%}
+    table.lines td.num{justify-content:space-between}
+    table.lines td:last-child{justify-content:flex-end;padding-top:2px}
+    table.lines td:last-child::before{display:none}
+    table.lines td .del{font-size:20px;padding:4px 14px}
+    .subtotal-row{display:flex!important;justify-content:space-between;align-items:center;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:9px 12px;margin-bottom:8px}
+    .subtotal-row td{display:block!important;border:0;padding:0;font-weight:700}
+    .subtotal-row td::before{display:none}
+    .subtotal-row td[colspan="3"]{display:none!important}
+
+    /* 합계바 — 2×2 그리드 */
+    .totalbar{display:grid;grid-template-columns:1fr 1fr;height:auto;gap:6px 12px;padding:9px 12px}
+    .totalbar .t.sum{grid-column:1 / -1}
+    .totalbar .t .lab{font-size:10px}
+    .totalbar .t .val{font-size:14px}
+    .totalbar .t.sum .val{font-size:18px}
+    .totalbar .hangul{display:none}
+
+    /* 오버레이 → 전체화면 */
+    .overlay{padding:0;align-items:stretch}
+    .list-panel{width:100%!important;max-width:100%;height:100%;border-radius:0;display:flex;flex-direction:column}
+    .list-panel > div[style*="max-height"]{max-height:none!important;flex:1;overflow:auto}
+    .list-head{position:sticky;top:0;background:#fff;z-index:2;padding:10px 12px;gap:8px}
+    .list-head h3{width:100%;margin-right:0;font-size:13px}
+    .list-head input{flex:1 1 auto;width:auto;min-width:120px}
+    .status-filter{flex-wrap:wrap}
+
+    /* ── 견적 목록 → 카드형 세로 배치 ── */
+    #listOverlay table.qlist thead{display:none}
+    #listOverlay table.qlist, #listOverlay table.qlist tbody{display:block;width:100%}
+    #listOverlay table.qlist tr.row{display:block;border:1px solid var(--line);border-radius:8px;margin:8px 10px;padding:8px 12px}
+    #listOverlay table.qlist tr.row:hover td{background:transparent}
+    #listOverlay table.qlist td{display:flex;justify-content:space-between;gap:10px;border:0;padding:3px 0;font-size:12.5px}
+    #listOverlay table.qlist td::before{content:attr(data-label);font-size:11px;font-weight:700;color:var(--ink-soft);flex:0 0 auto}
+    #listOverlay table.qlist td.acts{justify-content:flex-end;gap:6px;border-top:1px solid var(--line-soft);margin-top:5px;padding-top:8px}
+    #listOverlay table.qlist td.acts::before{display:none}
+    #listOverlay table.qlist td.acts button{flex:1;min-height:34px}
+
+    /* 팀원/템플릿 표는 가로 스크롤 유지(간격만 축소) */
+    table.qlist th,table.qlist td{padding:7px 10px}
+    #adminOverlay table.qlist,#tplOverlay table.qlist{min-width:520px}
+
+    /* 미리보기 — 화면에서만 1열(인쇄 양식은 @media print 별도 유지) */
+    .sheet-shell{width:100%}
+    .sheet-tools{position:sticky;top:0;background:var(--paper);padding:8px;margin:0;z-index:2}
+    .sheet{padding:18px 14px}
+    .sheet .doc-title{font-size:20px;letter-spacing:.18em;text-indent:.18em}
+    .sheet-headgrid{grid-template-columns:1fr;gap:0}
+    .sheet-bottom{grid-template-columns:1fr}
+    .amount-band{flex-wrap:wrap;gap:5px;font-size:12px}
+    .amount-band .won{margin-left:0}
+    table.sheet-table{font-size:10.5px}
+    table.sheet-table th,table.sheet-table td{padding:4px 4px}
+  }
+  @media (max-width:480px){
+    .g4{grid-template-columns:1fr}
+    .extras{grid-template-columns:1fr}
+    .brand-team{display:none}
+  }
+
   @media print{
     body *{visibility:hidden}
     .overlay{display:block;position:static;background:#fff;padding:0;overflow:visible}
@@ -305,6 +409,7 @@ service cloud.firestore {
   </div>
   <div class="meta">
     <span class="qno" id="quoteNo">— 새 견적 —</span>
+    <span id="lastSaved" style="display:none;font-size:10.5px;color:#9FB8CD"></span>
     <select class="status-sel" id="quoteStatus" onchange="markDirty()">
       <option>작성중</option><option>발송</option><option>수주</option><option>실주</option>
     </select>
@@ -323,7 +428,7 @@ service cloud.firestore {
   <!-- 좌측: 수수료 원장 -->
   <aside class="ledger">
     <div class="ledger-head">
-      <h2>수수료 원장 <span class="rev" id="feeRev">불러오는 중…</span></h2>
+      <h2>수수료 원장 <span class="rev" id="feeRev">불러오는 중…</span><button class="btn" title="최신 수수료 불러오기" onclick="refreshFees()" style="margin-left:auto;padding:2px 9px;font-size:14px;line-height:1.1">↻</button></h2>
       <div class="search">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
         <input id="searchInput" type="text" placeholder="항목·표준번호 검색 (예: 내광성, MS300-08, UL94)" oninput="renderLedger()">
@@ -425,7 +530,7 @@ service cloud.firestore {
   <div class="t"><span class="lab">시험수수료 소계</span><span class="val" id="tSub">0</span></div>
   <div class="t"><span class="lab">부대비용</span><span class="val" id="tExtra">0</span></div>
   <div class="t"><span class="lab">부가세</span><span class="val" id="tVat">0</span></div>
-  <div class="t sum"><span class="lab">합계 (부가세포함)</span><span class="val" id="tGrand">₩0</span></div>
+  <div class="t sum"><span class="lab" id="grandLab">합계 (부가세포함)</span><span class="val" id="tGrand">₩0</span></div>
   <div class="hangul" id="tHangul">일금 영원정</div>
 </footer>
 
@@ -506,7 +611,7 @@ service cloud.firestore {
     <div class="list-head">
       <h3>MS 표준 견적 템플릿 <span id="tplCount" style="font-size:11px;color:var(--ink-soft);font-weight:500"></span></h3>
       <input id="tplSearch" placeholder="규격번호·이름 검색 (예: MS210, 도장, 테이프)" oninput="renderTpl()" style="width:260px">
-      <button class="btn" onclick="closeTpl()">닫기</button>
+      <button class="btn" title="최신 템플릿 불러오기" onclick="refreshTemplates()" style="padding:7px 11px">↻ 새로고침</button><button class="btn" onclick="closeTpl()">닫기</button>
     </div>
     <div style="max-height:62vh;overflow-y:auto">
       <table class="qlist">
@@ -591,6 +696,7 @@ let currentId = null;     // Firestore 문서 id (null = 새 견적)
 let currentNo = null;     // 견적번호
 let dirty = false;
 let quotesCache = [];
+let currentUpdatedAt = null;   // 불러온 견적의 최종수정 시각(ms) — 동시편집 충돌 감지
 let listStatus = "전체";
 let db = null, auth = null;
 
@@ -630,6 +736,7 @@ function clearDirty(){
   dirty=false;
   $("saveBtn").textContent="저장";
 }
+function vatNote(){ return $("vatMode").value==="auto" ? "부가세포함" : "부가세 별도"; }
 
 /* ───────── Firebase 초기화 + 승인제 인증 흐름 ───────── */
 const configMissing = Object.values(firebaseConfig).some(v=>String(v).includes("여기에"));
@@ -775,6 +882,24 @@ async function reseedFees(){
   toast(`수수료표 ${FEE.length}항목 재업로드 완료`);
 }
 
+async function refreshFees(){
+  try{
+    toast("수수료표 새로고침 중…");
+    await loadFees();
+    $("feeRev").textContent="REV. 2026-06 · "+FEE.length+"항목";
+    renderTabs(); renderLedger();
+    toast("수수료표 "+FEE.length+"항목 — 최신본 반영됨");
+  }catch(e){ console.error(e); toast("새로고침 실패 — 잠시 후 다시 시도하세요"); }
+}
+async function refreshTemplates(){
+  try{
+    toast("템플릿 새로고침 중…");
+    await loadTemplates();
+    $("tplCount").textContent="· "+TPL.length+"종";
+    renderTpl();
+    toast("템플릿 "+TPL.length+"종 — 최신본 반영됨");
+  }catch(e){ console.error(e); toast("새로고침 실패 — 잠시 후 다시 시도하세요"); }
+}
 async function bootData(){
   try{
     if(!await loadFees()){
@@ -962,7 +1087,7 @@ async function deleteTpl(id){
 }
 
 async function refreshQuotes(){
-  const snap=await getDocs(query(collection(db,"quote_quotes"), orderBy("updatedAt","desc"), limit(100)));
+  const snap=await getDocs(query(collection(db,"quote_quotes"), orderBy("updatedAt","desc"), limit(500)));
   quotesCache=snap.docs.map(d=>({id:d.id, ...d.data()}));
   // 거래처 자동완성
   const clients=[...new Set(quotesCache.map(q=>q.to).filter(Boolean))];
@@ -1012,6 +1137,17 @@ async function saveQuote(){
     data.updatedAt=serverTimestamp();
     data.updatedBy=auth.currentUser.email;
     if(currentId){
+      // 동시편집 충돌 감지 — 불러온 뒤 다른 사람이 저장했는지 확인
+      try{
+        const cur=await getDoc(doc(db,"quote_quotes",currentId));
+        const srv=cur.exists()?cur.data().updatedAt:null;
+        if(srv?.toMillis && currentUpdatedAt && srv.toMillis()>currentUpdatedAt){
+          const who=(cur.data().updatedBy||"다른 사용자").split("@")[0];
+          if(!confirm("이 견적은 불러온 뒤 「"+who+"」님이 수정했습니다.\n그 변경을 덮어쓰고 내 내용으로 저장할까요?\n\n(취소하면 견적 목록에서 최신본을 다시 여세요)")){
+            $("saveBtn").disabled=false; return;
+          }
+        }
+      }catch(e){ console.error(e); }
       await setDoc(doc(db,"quote_quotes",currentId), data, {merge:true});
     }else{
       data.createdAt=serverTimestamp();
@@ -1022,6 +1158,10 @@ async function saveQuote(){
     $("quoteNo").textContent=currentNo;
     clearDirty();
     toast(`저장 완료 — ${currentNo}`);
+    try{
+      const fresh=await getDoc(doc(db,"quote_quotes",currentId));
+      if(fresh.exists()){ currentUpdatedAt=fresh.data().updatedAt?.toMillis?.()||null; updateLastSaved(fresh.data()); }
+    }catch(e){ console.error(e); }
     refreshQuotes();
   }catch(e){
     console.error(e); toast("저장 실패: "+(e.code||e.message));
@@ -1030,8 +1170,20 @@ async function saveQuote(){
   }
 }
 
+function updateLastSaved(q){
+  const el=$("lastSaved"); if(!el) return;
+  if(!q || !q.updatedAt || !q.updatedAt.toDate){ el.style.display="none"; el.textContent=""; return; }
+  const dt=q.updatedAt.toDate();
+  const who=(q.updatedBy||"").split("@")[0];
+  const mm=dt.getMonth()+1, dd=dt.getDate();
+  const hh=String(dt.getHours()).padStart(2,"0"), mi=String(dt.getMinutes()).padStart(2,"0");
+  el.textContent="최종수정 "+who+" · "+mm+"/"+dd+" "+hh+":"+mi;
+  el.style.display="";
+}
 function loadQuote(q){
   currentId=q.id; currentNo=q.no||null;
+  currentUpdatedAt=q.updatedAt?.toMillis?.()||null;
+  updateLastSaved(q);
   $("quoteNo").textContent=currentNo||"— 새 견적 —";
   $("quoteStatus").value=q.status||"작성중";
   $("fTo").value=q.to||""; $("fAttn").value=q.attn||"";
@@ -1052,7 +1204,8 @@ function loadQuote(q){
 
 function newQuote(){
   if(dirty && !confirm("저장하지 않은 변경사항이 있습니다. 새 견적을 시작할까요?")) return;
-  currentId=null; currentNo=null; lines=[];
+  currentId=null; currentNo=null; currentUpdatedAt=null; lines=[];
+  updateLastSaved(null);
   $("quoteNo").textContent="— 새 견적 —";
   $("quoteStatus").value="작성중";
   ["fTo","fAttn","fStaff","fTel","fMemo"].forEach(id=>$(id).value="");
@@ -1067,7 +1220,8 @@ async function duplicateQuote(id){
   const q=quotesCache.find(x=>x.id===id); if(!q) return;
   if(dirty && !confirm("저장하지 않은 변경사항이 있습니다. 계속할까요?")) return;
   loadQuote({...q, id:null, no:null, status:"작성중"});
-  currentId=null; currentNo=null;
+  currentId=null; currentNo=null; currentUpdatedAt=null;
+  updateLastSaved(null);
   $("quoteNo").textContent="— 새 견적 (복제) —";
   markDirty(); closeList();
   toast("복제됨 — 저장 시 새 견적번호가 발급됩니다");
@@ -1152,12 +1306,12 @@ function renderList(){
   $("listEmpty").style.display=rows.length?"none":"block";
   $("listBody").innerHTML=rows.map(q=>`
     <tr class="row" onclick="pickQuote('${q.id}')">
-      <td style="font-family:var(--mono);font-size:11.5px">${esc(q.no||"—")}</td>
-      <td style="font-weight:600">${esc(q.to||"-")}<span style="color:var(--ink-soft);font-weight:400;font-size:11px"> ${esc(q.attn?(" · "+q.attn):"")}</span></td>
-      <td class="num">${won(q.totals?.grand||0)}</td>
-      <td><span class="badge ${esc(q.status||"작성중")}">${esc(q.status||"작성중")}</span></td>
-      <td style="font-size:11.5px;color:var(--ink-soft)">${esc(fmtDate(q))}</td>
-      <td style="font-size:11.5px;color:var(--ink-soft)">${esc(q.staff||"")}</td>
+      <td data-label="번호" style="font-family:var(--mono);font-size:11.5px">${esc(q.no||"—")}</td>
+      <td data-label="수신" style="font-weight:600">${esc(q.to||"-")}<span style="color:var(--ink-soft);font-weight:400;font-size:11px"> ${esc(q.attn?(" · "+q.attn):"")}</span></td>
+      <td data-label="합계" class="num">${won(q.totals?.grand||0)}</td>
+      <td data-label="상태"><span class="badge ${esc(q.status||"작성중")}">${esc(q.status||"작성중")}</span></td>
+      <td data-label="날짜" style="font-size:11.5px;color:var(--ink-soft)">${esc(fmtDate(q))}</td>
+      <td data-label="담당" style="font-size:11.5px;color:var(--ink-soft)">${esc(q.staff||"")}</td>
       <td class="acts" onclick="event.stopPropagation()">
         <button onclick="pickQuote('${q.id}')">열기</button>
         <button onclick="duplicateQuote('${q.id}')">복제</button>
@@ -1230,15 +1384,15 @@ function renderLines(){
   $("lineCount").textContent = lines.length?`(${lines.length}건)`:"";
   tb.innerHTML = lines.map(l=>`
     <tr>
-      <td style="color:var(--ink-soft);font-size:11.5px;white-space:nowrap">${esc(l.cat)}</td>
-      <td><input value="${esc(l.name)}" onchange="upd(${l.uid},'name',this.value)"></td>
-      <td><input value="${esc(l.std)}" class="std-tag" onchange="upd(${l.uid},'std',this.value)" placeholder="-"></td>
-      <td><input class="n" value="${won(l.price)}" onfocus="this.select()" onchange="updWon(${l.uid},'price',this.value)"></td>
-      <td>${l.per?`<span class="hour-wrap"><input class="n" type="number" min="0" value="${l.qtyPer}" onfocus="this.select()" onchange="upd(${l.uid},'qtyPer',parseInt(this.value)||0)"> ${esc(l.perLabel)}<br><span style="font-size:10px">(+${won(l.per)}/단위)</span></span>`:`<span style="color:var(--line)">—</span>`}</td>
-      <td><input class="n" type="number" min="0" value="${l.samples}" onfocus="this.select()" onchange="upd(${l.uid},'samples',parseInt(this.value)||0)"></td>
-      <td class="num" style="font-weight:700">${won(lineFee(l))}</td>
-      <td><input class="n" type="number" min="0" value="${l.days}" onfocus="this.select()" onchange="upd(${l.uid},'days',parseInt(this.value)||0)"></td>
-      <td><input value="${esc(l.note)}" onchange="upd(${l.uid},'note',this.value)" style="font-size:11.5px"></td>
+      <td data-label="구분" style="color:var(--ink-soft);font-size:11.5px;white-space:nowrap">${esc(l.cat)}</td>
+      <td data-label="항목"><input value="${esc(l.name)}" onchange="upd(${l.uid},'name',this.value)"></td>
+      <td data-label="표준"><input value="${esc(l.std)}" class="std-tag" onchange="upd(${l.uid},'std',this.value)" placeholder="-"></td>
+      <td data-label="단가"><input class="n" value="${won(l.price)}" onfocus="this.select()" onchange="updWon(${l.uid},'price',this.value)"></td>
+      <td data-label="시간">${l.per?`<span class="hour-wrap"><input class="n" type="number" min="0" value="${l.qtyPer}" onfocus="this.select()" onchange="upd(${l.uid},'qtyPer',parseInt(this.value)||0)"> ${esc(l.perLabel)}<br><span style="font-size:10px">(+${won(l.per)}/단위)</span></span>`:`<span style="color:var(--line)">—</span>`}</td>
+      <td data-label="시료수"><input class="n" type="number" min="0" value="${l.samples}" onfocus="this.select()" onchange="upd(${l.uid},'samples',parseInt(this.value)||0)"></td>
+      <td data-label="수수료" class="num" style="font-weight:700">${won(lineFee(l))}</td>
+      <td data-label="소요일"><input class="n" type="number" min="0" value="${l.days}" onfocus="this.select()" onchange="upd(${l.uid},'days',parseInt(this.value)||0)"></td>
+      <td data-label="비고"><input value="${esc(l.note)}" onchange="upd(${l.uid},'note',this.value)" style="font-size:11.5px"></td>
       <td><button class="del" onclick="removeLine(${l.uid})" title="삭제">×</button></td>
     </tr>`).join("") + (lines.length?`
     <tr class="subtotal-row">
@@ -1274,7 +1428,8 @@ function recalc(){
   $("tExtra").textContent=won(t.extras);
   $("tVat").textContent=won(t.vat);
   $("tGrand").textContent="₩"+won(t.grand);
-  $("tHangul").textContent="일금 "+numToHangul(t.grand)+"원정 (부가세포함)";
+  $("grandLab").textContent="합계 ("+vatNote()+")";
+  $("tHangul").textContent="일금 "+numToHangul(t.grand)+"원정 ("+vatNote()+")";
   ["exCopy","exTrans","exSplit","exSpecimen","exPost"].forEach(id=>{
     const el=$(id);
     if(document.activeElement!==el) el.value=won(parseWon(el.value));
@@ -1319,7 +1474,7 @@ function openPreview(){
     </div>
     <div class="amount-band">
       <b>견적금액</b><span class="han">일금 ${numToHangul(t.grand)}원정</span>
-      <span class="won">( ₩${won(t.grand)} )</span><span class="tax">※ 부가세포함</span>
+      <span class="won">( ₩${won(t.grand)} )</span><span class="tax">※ ${vatNote()}</span>
     </div>
     <table class="sheet-table">
       <thead><tr>
@@ -1373,7 +1528,8 @@ Object.assign(window,{
   toggleFeeEdit, openFeeEdit, closeFeeEdit, feTypeChanged, saveFee, deleteFee, reseedFees,
   newQuote, saveQuote, openList, closeList, setListStatus,
   pickQuote, duplicateQuote, deleteQuote, setCat, addLine, removeLine, upd, updWon,
-  recalc, markDirty, openPreview, closePreview, renderLedger, renderList
+  recalc, markDirty, openPreview, closePreview, renderLedger, renderList,
+  refreshFees, refreshTemplates
 });
 
 /* ───────── 초기 화면 ───────── */
