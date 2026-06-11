@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FITI 의장소재팀 · 견적 작성 시스템</title>
+<style>
+  :root{
+    --fiti-blue:#0B4F8A;
+    --fiti-blue-deep:#08355C;
+    --fiti-teal:#0E8C96;
+    --fiti-teal-soft:#E4F2F3;
+    --ink:#1A2733;
+    --ink-soft:#5A6B7A;
+    --paper:#F4F7F9;
+    --panel:#FFFFFF;
+    --line:#D8E1E8;
+    --line-soft:#EAF0F4;
+    --warn:#A8651E;
+    --mono:"IBM Plex Mono","SFMono-Regular",ui-monospace,Consolas,monospace;
+    --sans:"Pretendard","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;
+    --serif:"Noto Serif KR","Nanum Myeongjo",serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:var(--sans);color:var(--ink);background:var(--paper);font-size:13.5px;letter-spacing:-0.01em}
+  button{font-family:inherit;cursor:pointer}
+  input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+
+  /* ───────── 상단 바 ───────── */
+  .topbar{height:54px;background:var(--fiti-blue-deep);color:#fff;display:flex;align-items:center;gap:12px;padding:0 16px;position:sticky;top:0;z-index:50}
+  .topbar .brand{display:flex;align-items:baseline;gap:10px;white-space:nowrap}
+  .brand-mark{font-family:var(--mono);font-weight:700;font-size:17px;letter-spacing:.04em;color:#fff}
+  .brand-mark span{color:#7FD4DB}
+  .brand-team{font-size:12.5px;color:#B9CBDC;font-weight:500}
+  .topbar .meta{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:12.5px;color:#C7D6E4}
+  .meta .qno{font-family:var(--mono);background:rgba(255,255,255,.08);padding:4px 10px;border-radius:4px;color:#E8F4F5;letter-spacing:.03em}
+  .meta .user-chip{font-size:11.5px;color:#9FB8CD;border:1px solid rgba(255,255,255,.18);border-radius:99px;padding:3px 10px}
+  select.status-sel{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:6px;padding:5px 8px;font-size:12px;font-weight:700;outline:0}
+  select.status-sel option{color:var(--ink)}
+  .btn{border:1px solid var(--line);background:#fff;color:var(--ink);padding:7px 14px;border-radius:6px;font-size:13px;font-weight:600;transition:background .12s,border-color .12s}
+  .btn:hover{background:var(--line-soft)}
+  .btn:focus-visible{outline:2px solid var(--fiti-teal);outline-offset:1px}
+  .btn-primary{background:var(--fiti-teal);border-color:var(--fiti-teal);color:#fff}
+  .btn-primary:hover{background:#0B767F}
+  .btn-ghost-dark{background:transparent;border-color:rgba(255,255,255,.35);color:#fff}
+  .btn-ghost-dark:hover{background:rgba(255,255,255,.1)}
+  .btn-save{background:#F0B429;border-color:#F0B429;color:#3A2B00}
+  .btn-save:hover{background:#E0A41B}
+
+  /* ───────── 레이아웃 ───────── */
+  .workspace{display:grid;grid-template-columns:400px 1fr;height:calc(100vh - 54px - 58px)}
+  @media (max-width:980px){
+    .workspace{grid-template-columns:1fr;height:auto}
+    .ledger{height:420px}
+    .topbar{flex-wrap:wrap;height:auto;padding:8px 12px;gap:8px}
+    .topbar .meta{margin-left:0;flex-wrap:wrap}
+  }
+
+  /* ───────── 좌측: 수수료 원장 ───────── */
+  .ledger{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+  .ledger-head{padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+  .ledger-head h2{font-size:13px;font-weight:700;color:var(--fiti-blue);letter-spacing:.02em;display:flex;align-items:center;gap:8px}
+  .ledger-head h2 .rev{font-family:var(--mono);font-size:10.5px;font-weight:500;color:var(--ink-soft);background:var(--line-soft);padding:2px 7px;border-radius:3px}
+  .search{margin-top:10px;display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:6px;padding:7px 10px;background:#fff}
+  .search:focus-within{border-color:var(--fiti-teal)}
+  .search input{border:0;outline:0;flex:1;font-size:13px;background:transparent}
+  .search svg{flex:none;color:var(--ink-soft)}
+  .cat-tabs{display:flex;flex-wrap:wrap;gap:5px;padding:10px 16px;border-bottom:1px solid var(--line)}
+  .cat-tab{border:1px solid var(--line);background:#fff;border-radius:99px;padding:4px 11px;font-size:12px;color:var(--ink-soft);font-weight:600}
+  .cat-tab.on{background:var(--fiti-blue);border-color:var(--fiti-blue);color:#fff}
+  .ledger-list{overflow-y:auto;flex:1;padding:8px 10px 16px}
+  .fee-item{border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px 12px;margin-bottom:7px;display:block;width:100%;text-align:left;transition:border-color .12s, box-shadow .12s}
+  .fee-item:hover{border-color:var(--fiti-teal);box-shadow:0 1px 4px rgba(14,140,150,.12)}
+  .fee-item .row1{display:flex;align-items:flex-start;gap:8px}
+  .fee-item .name{font-weight:700;font-size:13px;flex:1;line-height:1.35}
+  .fee-item .price{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--fiti-blue);white-space:nowrap}
+  .fee-item .price small{font-size:10.5px;color:var(--ink-soft);font-weight:500}
+  .fee-item .row2{margin-top:5px;display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+  .chip{font-family:var(--mono);font-size:10.5px;color:var(--fiti-teal);background:var(--fiti-teal-soft);border-radius:3px;padding:2px 6px;letter-spacing:.01em}
+  .chip.cat{color:var(--ink-soft);background:var(--line-soft)}
+  .fee-item .cond{font-size:11.5px;color:var(--ink-soft);margin-top:4px;line-height:1.4}
+  .ledger-empty{padding:36px 18px;text-align:center;color:var(--ink-soft);font-size:12.5px;line-height:1.6}
+
+  /* ───────── 우측: 견적 작성 ───────── */
+  .editor{overflow-y:auto;min-height:0;padding:18px 22px 26px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-bottom:14px;overflow:hidden}
+  .card-head{padding:10px 16px;border-bottom:1px solid var(--line-soft);font-size:12.5px;font-weight:700;color:var(--fiti-blue);display:flex;align-items:center;justify-content:space-between;letter-spacing:.02em}
+  .card-body{padding:14px 16px}
+  .grid{display:grid;gap:10px 14px}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  @media (max-width:1180px){.g4{grid-template-columns:repeat(2,1fr)}}
+  .field label{display:block;font-size:11px;font-weight:700;color:var(--ink-soft);margin-bottom:4px;letter-spacing:.02em}
+  .field input,.field select{width:100%;border:1px solid var(--line);border-radius:6px;padding:7px 9px;font-size:13px;background:#fff;outline:0}
+  .field input:focus,.field select:focus{border-color:var(--fiti-teal)}
+
+  table.lines{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.lines th{background:var(--paper);border-bottom:1px solid var(--line);padding:8px 8px;font-size:11px;color:var(--ink-soft);font-weight:700;text-align:left;white-space:nowrap;letter-spacing:.02em}
+  table.lines td{border-bottom:1px solid var(--line-soft);padding:7px 8px;vertical-align:middle}
+  table.lines tr:hover td{background:#FBFDFE}
+  .num{font-family:var(--mono);text-align:right;white-space:nowrap}
+  td input{border:1px solid transparent;border-radius:4px;padding:4px 6px;width:100%;background:transparent;outline:0;font-size:12.5px}
+  td input:hover{border-color:var(--line)}
+  td input:focus{border-color:var(--fiti-teal);background:#fff}
+  td input.n{font-family:var(--mono);text-align:right}
+  td .std-tag{font-family:var(--mono);font-size:11px;color:var(--fiti-teal)}
+  .hour-wrap{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-soft)}
+  .hour-wrap input{width:62px}
+  .del{border:0;background:transparent;color:var(--ink-soft);font-size:15px;border-radius:4px;padding:2px 7px;line-height:1}
+  .del:hover{background:#FBEAEA;color:#B0392E}
+  .lines-empty{padding:34px 20px;text-align:center;color:var(--ink-soft);font-size:12.5px;line-height:1.7}
+  .lines-empty b{color:var(--fiti-blue)}
+  .subtotal-row td{background:var(--paper)!important;font-weight:700;border-top:1px solid var(--line)}
+
+  .extras{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 14px}
+  @media (max-width:1180px){.extras{grid-template-columns:repeat(2,1fr)}}
+  .extra-field{display:flex;flex-direction:column}
+  .extra-field label{font-size:11px;font-weight:700;color:var(--ink-soft);margin-bottom:4px}
+  .extra-field .inputline{display:flex;align-items:center;gap:6px}
+  .extra-field input,.extra-field select{border:1px solid var(--line);border-radius:6px;padding:7px 9px;font-size:12.5px;background:#fff;outline:0;width:100%}
+  .extra-field input.n{font-family:var(--mono);text-align:right}
+  .extra-field input:focus,.extra-field select:focus{border-color:var(--fiti-teal)}
+  .extra-field .copies{width:74px;flex:none}
+  .hint{font-size:10.5px;color:var(--ink-soft);margin-top:3px}
+
+  /* 하단 합계 */
+  .totalbar{height:58px;background:var(--fiti-blue);color:#fff;display:flex;align-items:center;gap:26px;padding:0 22px;position:sticky;bottom:0;z-index:40}
+  .totalbar .t{display:flex;flex-direction:column;line-height:1.25}
+  .totalbar .t .lab{font-size:10.5px;color:#AFC6DB;font-weight:600;letter-spacing:.04em}
+  .totalbar .t .val{font-family:var(--mono);font-size:15px;font-weight:600}
+  .totalbar .t.sum .val{font-size:19px;color:#9CE3E8}
+  .totalbar .hangul{margin-left:auto;font-size:12px;color:#D6E4F0;max-width:380px;text-align:right;line-height:1.4}
+  @media (max-width:980px){.totalbar{flex-wrap:wrap;height:auto;padding:10px 14px;gap:14px}.totalbar .hangul{display:none}}
+
+  /* ───────── 오버레이 공통 ───────── */
+  .overlay{position:fixed;inset:0;background:rgba(13,28,42,.55);z-index:100;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:30px 16px}
+  .overlay.show{display:flex}
+
+  /* 견적서 시트 */
+  .sheet-shell{width:840px;max-width:100%}
+  .sheet-tools{display:flex;justify-content:flex-end;gap:8px;margin-bottom:10px}
+  .sheet{background:#fff;color:#111;padding:46px 50px 40px;box-shadow:0 8px 40px rgba(0,0,0,.35);font-size:12px;line-height:1.45}
+  .sheet .doc-title{font-family:var(--serif);font-size:30px;font-weight:700;letter-spacing:.42em;text-indent:.42em;border-bottom:3px double #111;padding-bottom:10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:flex-end}
+  .sheet .doc-title .logo{font-family:var(--mono);font-size:13px;letter-spacing:.02em;text-indent:0;color:var(--fiti-blue);font-weight:700;padding-bottom:4px}
+  .sheet .doc-title .logo small{display:block;font-size:9px;color:#666;font-weight:400}
+  .sheet-headgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 26px;margin:14px 0 10px}
+  .kv{display:grid;grid-template-columns:84px 1fr;border-bottom:1px solid #444;padding:5px 2px;font-size:12px;align-items:baseline}
+  .kv b{font-weight:700;letter-spacing:.18em}
+  .kv .v{font-size:12px}
+  .kv .v .suffix{float:right;color:#333;font-size:11px}
+  .amount-band{border:1.5px solid #111;display:flex;align-items:center;gap:14px;padding:9px 14px;margin:12px 0;font-size:13px}
+  .amount-band b{letter-spacing:.2em}
+  .amount-band .han{font-weight:700}
+  .amount-band .won{font-family:var(--mono);margin-left:auto}
+  .amount-band .tax{font-size:10.5px;color:#333}
+  table.sheet-table{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:6px}
+  table.sheet-table th{border:1px solid #333;background:#F0F3F5;padding:6px 5px;font-weight:700;font-size:11px}
+  table.sheet-table td{border:1px solid #555;padding:5.5px 6px;vertical-align:middle}
+  table.sheet-table td.c{text-align:center}
+  table.sheet-table td.r{text-align:right;font-family:var(--mono);font-size:11px}
+  .sheet-bottom{display:grid;grid-template-columns:1fr 300px;margin-top:0}
+  .sheet-bottom .bank{border:1px solid #555;border-top:0;padding:10px 12px;font-size:11.5px;line-height:1.7}
+  .sheet-bottom table{width:100%;border-collapse:collapse;font-size:11.5px}
+  .sheet-bottom table td{border:1px solid #555;border-top:0;padding:5px 8px}
+  .sheet-bottom table td.r{text-align:right;font-family:var(--mono)}
+  .grand td{font-weight:700;background:#F0F3F5}
+  .refs{margin-top:16px;font-size:10.5px;color:#222;line-height:1.75}
+  .refs b{font-size:11px}
+  .sheet-sign{margin-top:30px;text-align:center;font-family:var(--serif);font-size:21px;font-weight:700;letter-spacing:.34em}
+  .sheet-sign .stamp{display:inline-block;margin-left:8px;color:#C0392B;border:2px solid #C0392B;border-radius:6px;font-size:10px;letter-spacing:.05em;padding:8px 6px;vertical-align:middle;font-family:var(--sans);font-weight:700}
+
+  @media print{
+    body *{visibility:hidden}
+    .overlay{display:block;position:static;background:#fff;padding:0;overflow:visible}
+    .sheet-shell{width:auto}
+    .sheet-tools{display:none}
+    .sheet,.sheet *{visibility:visible}
+    .sheet{box-shadow:none;padding:10mm 12mm}
+  }
+
+  /* ───────── 견적 목록 ───────── */
+  .list-panel{width:880px;max-width:100%;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.35)}
+  .list-head{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .list-head h3{font-size:14px;color:var(--fiti-blue);letter-spacing:.02em;margin-right:auto}
+  .list-head input{border:1px solid var(--line);border-radius:6px;padding:7px 10px;font-size:12.5px;width:220px;outline:0}
+  .list-head input:focus{border-color:var(--fiti-teal)}
+  .status-filter{display:flex;gap:4px}
+  .status-filter button{border:1px solid var(--line);background:#fff;border-radius:99px;padding:4px 10px;font-size:11.5px;font-weight:600;color:var(--ink-soft)}
+  .status-filter button.on{background:var(--fiti-blue);border-color:var(--fiti-blue);color:#fff}
+  table.qlist{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.qlist th{background:var(--paper);padding:9px 12px;font-size:11px;color:var(--ink-soft);text-align:left;border-bottom:1px solid var(--line)}
+  table.qlist td{padding:9px 12px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+  table.qlist tr.row:hover td{background:#F6FBFC;cursor:pointer}
+  .badge{display:inline-block;font-size:10.5px;font-weight:700;border-radius:4px;padding:3px 8px}
+  .badge.작성중{background:#EEF2F6;color:#54677A}
+  .badge.발송{background:#E3EEF9;color:#0B4F8A}
+  .badge.수주{background:#E2F3EA;color:#16703F}
+  .badge.실주{background:#F9E8E6;color:#A93B2E}
+  .qlist .acts{display:flex;gap:4px;justify-content:flex-end}
+  .qlist .acts button{border:1px solid var(--line);background:#fff;border-radius:5px;padding:4px 8px;font-size:11px}
+  .qlist .acts button:hover{background:var(--line-soft)}
+  .qlist .acts button.danger:hover{background:#FBEAEA;border-color:#E5B6B0;color:#B0392E}
+  .list-empty{padding:40px;text-align:center;color:var(--ink-soft);font-size:12.5px;line-height:1.7}
+
+  /* ───────── 로그인 / 설정 게이트 ───────── */
+  .gate{position:fixed;inset:0;z-index:300;background:linear-gradient(160deg,#08355C 0%,#0B4F8A 55%,#0E8C96 130%);display:flex;align-items:center;justify-content:center;padding:20px}
+  .gate-card{width:380px;max-width:100%;background:#fff;border-radius:14px;padding:34px 32px 30px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+  .gate-card .logo{font-family:var(--mono);font-weight:700;font-size:22px;color:var(--fiti-blue-deep);letter-spacing:.04em}
+  .gate-card .logo span{color:var(--fiti-teal)}
+  .gate-card .sub{font-size:12.5px;color:var(--ink-soft);margin:4px 0 22px}
+  .gate-card label{display:block;font-size:11px;font-weight:700;color:var(--ink-soft);margin:12px 0 5px}
+  .gate-card input{width:100%;border:1px solid var(--line);border-radius:7px;padding:10px 12px;font-size:13.5px;outline:0}
+  .gate-card input:focus{border-color:var(--fiti-teal)}
+  .gate-card .login-btn{width:100%;margin-top:20px;background:var(--fiti-blue);color:#fff;border:0;border-radius:7px;padding:11px;font-size:14px;font-weight:700}
+  .gate-card .login-btn:hover{background:var(--fiti-blue-deep)}
+  .gate-card .err{margin-top:12px;font-size:12px;color:#B0392E;background:#FBEAEA;border-radius:6px;padding:8px 10px;display:none;line-height:1.5}
+  .gate-card .err.show{display:block}
+  .gate-wide{width:560px}
+  .setup-steps{font-size:12.5px;line-height:1.8;color:var(--ink)}
+  .setup-steps b{color:var(--fiti-blue)}
+  .setup-steps code{font-family:var(--mono);font-size:11px;background:var(--line-soft);border-radius:3px;padding:1px 5px}
+  .setup-steps pre{font-family:var(--mono);font-size:10.5px;background:#10293E;color:#CFE6F5;border-radius:8px;padding:12px 14px;overflow-x:auto;line-height:1.55;margin:8px 0}
+  .setup-steps ol{padding-left:18px}
+  .setup-steps li{margin-bottom:8px}
+
+  .toast{position:fixed;left:50%;bottom:78px;transform:translateX(-50%) translateY(8px);background:var(--ink);color:#fff;font-size:12.5px;padding:9px 16px;border-radius:99px;opacity:0;pointer-events:none;transition:opacity .18s, transform .18s;z-index:400}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .saving-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#F0B429;margin-left:6px;vertical-align:middle}
+</style>
+</head>
+<body>
+
+<!-- ═════════ 설정 게이트 (firebaseConfig 미입력 시) ═════════ -->
+<div class="gate" id="setupGate" style="display:none">
+  <div class="gate-card gate-wide">
+    <div class="logo">FITI<span>·</span>QUOTE</div>
+    <div class="sub">처음 설정 — Firebase 연결이 필요합니다 (1회만)</div>
+    <div class="setup-steps">
+      <ol>
+        <li><a href="https://console.firebase.google.com" target="_blank">Firebase 콘솔</a>에서 <b>프로젝트 추가</b> → 이름 예: <code>fiti-quote</code> (애널리틱스는 꺼도 됨)</li>
+        <li>왼쪽 메뉴 <b>빌드 → Firestore Database</b> → 데이터베이스 만들기 → <b>프로덕션 모드</b> → 위치 <code>asia-northeast3 (서울)</code></li>
+        <li><b>빌드 → Authentication</b> → 시작하기 → 로그인 방법에서 <b>이메일/비밀번호</b> 사용 설정 → <b>Users 탭</b>에서 팀 계정 추가 (예: 팀 공용 1개 또는 팀원별)</li>
+        <li>프로젝트 개요 옆 <b>⚙ 프로젝트 설정</b> → 일반 → 내 앱 → <b>웹 앱(&lt;/&gt;) 추가</b> → 표시되는 <code>firebaseConfig</code> 값을 복사</li>
+        <li>이 HTML 파일을 메모장으로 열어 상단의 <code>★ FIREBASE CONFIG ★</code> 부분에 붙여넣기 → 저장 → 새로고침</li>
+        <li>Firestore <b>규칙</b> 탭에 아래 붙여넣고 게시 (로그인한 사람만 읽기/쓰기):</li>
+      </ol>
+      <pre>rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}</pre>
+      <div style="font-size:11.5px;color:var(--ink-soft)">※ GitHub에 올릴 경우 저장소는 <b>Private</b> 권장. firebaseConfig 자체는 공개되어도 위 규칙 + 로그인이 있으면 데이터는 보호됩니다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════ 로그인 게이트 ═════════ -->
+<div class="gate" id="authGate" style="display:none">
+  <div class="gate-card">
+    <div class="logo">FITI<span>·</span>QUOTE</div>
+    <div class="sub" id="authSub">의장소재팀 견적 작성 시스템 — 로그인하세요</div>
+    <div id="signupNameWrap" style="display:none"><label>이름 (소속_이름 권장)</label>
+    <input id="signupName" placeholder="예) 의장_홍길동"></div>
+    <label>이메일</label>
+    <input id="loginEmail" type="email" autocomplete="username" placeholder="you@example.com">
+    <label>비밀번호</label>
+    <input id="loginPw" type="password" autocomplete="current-password" placeholder="6자 이상" onkeydown="if(event.key==='Enter')authSubmit()">
+    <button class="login-btn" id="authMainBtn" onclick="authSubmit()">로그인</button>
+    <button class="login-btn" style="background:#fff;color:var(--ink);border:1px solid var(--line);margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="doGoogleLogin()">
+      <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.2 6.1 29.4 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.2 6.1 29.4 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4.1 5.5l6.2 5.2C41.4 35.2 44 30 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg>
+      Google 계정으로 로그인
+    </button>
+    <div style="text-align:center;margin-top:14px;font-size:12px;color:var(--ink-soft)">
+      <a href="#" id="authToggle" onclick="toggleAuthMode();return false" style="color:var(--fiti-teal);font-weight:700">처음이신가요? 회원가입 신청</a>
+    </div>
+    <div class="err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- ═════════ 승인 대기 게이트 ═════════ -->
+<div class="gate" id="pendingGate" style="display:none">
+  <div class="gate-card" style="text-align:center">
+    <div class="logo">FITI<span>·</span>QUOTE</div>
+    <div style="font-size:40px;margin:18px 0 8px">⏳</div>
+    <div style="font-size:15px;font-weight:700;margin-bottom:6px">승인 대기 중입니다</div>
+    <div class="sub" style="margin-bottom:0">가입 신청이 접수되었습니다.<br>관리자가 승인하면 이용할 수 있어요.<br><span id="pendingEmail" style="font-family:var(--mono);font-size:11px;color:var(--fiti-blue)"></span></div>
+    <button class="login-btn" style="margin-top:18px;background:#fff;color:var(--ink);border:1px solid var(--line)" onclick="doLogout()">다른 계정으로 로그인</button>
+  </div>
+</div>
+
+<!-- ═════════ 상단 바 ═════════ -->
+<header class="topbar" id="appTop" style="visibility:hidden">
+  <div class="brand">
+    <span class="brand-mark">FITI<span>·</span>QUOTE</span>
+    <span class="brand-team">의장소재팀 견적 작성 시스템</span>
+  </div>
+  <div class="meta">
+    <span class="qno" id="quoteNo">— 새 견적 —</span>
+    <select class="status-sel" id="quoteStatus" onchange="markDirty()">
+      <option>작성중</option><option>발송</option><option>수주</option><option>실주</option>
+    </select>
+    <span class="user-chip" id="userChip"></span>
+    <button class="btn btn-ghost-dark" id="adminBtn" style="display:none" onclick="openAdmin()">팀원 관리</button>
+    <button class="btn btn-ghost-dark" onclick="openList()">견적 목록</button>
+    <button class="btn btn-ghost-dark" onclick="newQuote()">새 견적</button>
+    <button class="btn btn-save" id="saveBtn" onclick="saveQuote()">저장</button>
+    <button class="btn btn-primary" onclick="openPreview()">미리보기 · 인쇄</button>
+    <button class="btn btn-ghost-dark" onclick="doLogout()" title="로그아웃" style="padding:7px 10px">⎋</button>
+  </div>
+</header>
+
+<div class="workspace" id="appBody" style="visibility:hidden">
+
+  <!-- 좌측: 수수료 원장 -->
+  <aside class="ledger">
+    <div class="ledger-head">
+      <h2>수수료 원장 <span class="rev" id="feeRev">불러오는 중…</span></h2>
+      <div class="search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="searchInput" type="text" placeholder="항목·표준번호 검색 (예: 내광성, MS300-08, UL94)" oninput="renderLedger()">
+      </div>
+    </div>
+    <div class="cat-tabs" id="catTabs"></div>
+    <div class="ledger-list" id="ledgerList"><div class="ledger-empty">수수료표 불러오는 중…</div></div>
+  </aside>
+
+  <!-- 우측: 견적 편집 -->
+  <main class="editor">
+    <section class="card">
+      <div class="card-head">의뢰자 · 견적 정보</div>
+      <div class="card-body grid g4">
+        <div class="field"><label>수신 (업체명)</label><input id="fTo" placeholder="예) ○○주식회사" oninput="markDirty()" list="clientList"><datalist id="clientList"></datalist></div>
+        <div class="field"><label>참조 (담당자)</label><input id="fAttn" placeholder="예) 홍길동 책임" oninput="markDirty()"></div>
+        <div class="field"><label>견적날짜</label><input id="fDate" type="date" onchange="markDirty()"></div>
+        <div class="field"><label>유효기간</label><input id="fValid" value="30일" oninput="markDirty()"></div>
+        <div class="field"><label>우리측 담당자</label><input id="fStaff" placeholder="의장소재팀 담당자명" oninput="markDirty()"></div>
+        <div class="field"><label>전화번호</label><input id="fTel" placeholder="043-000-0000" oninput="markDirty()"></div>
+        <div class="field"><label>의뢰 구분</label>
+          <select id="fType" onchange="markDirty()"><option>일반 의뢰</option><option>현대자동차(MS)</option><option>해외 표준(ISO/ASTM)</option><option>Rivian / Geely</option><option>르노(Renault)</option></select>
+        </div>
+        <div class="field"><label>비고(내부 메모, 출력 안 됨)</label><input id="fMemo" placeholder="내부 참고사항" oninput="markDirty()"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <span>시험 항목 <span id="lineCount" style="color:var(--ink-soft);font-weight:600"></span></span>
+        <span style="font-size:11px;color:var(--ink-soft);font-weight:500">좌측 원장에서 클릭해 추가 · 단가/시료수/소요일 직접 수정 가능</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="lines">
+          <thead><tr>
+            <th style="width:64px">구분</th><th>항목</th><th style="width:150px">표준번호/시험방법</th>
+            <th style="width:120px;text-align:right">단가(원)</th><th style="width:120px">시간/횟수</th>
+            <th style="width:70px;text-align:right">시료수(종)</th><th style="width:110px;text-align:right">시험수수료(원)</th>
+            <th style="width:64px;text-align:right">소요일</th><th style="width:130px">비고</th><th style="width:36px"></th>
+          </tr></thead>
+          <tbody id="lineBody"></tbody>
+        </table>
+        <div class="lines-empty" id="linesEmpty">
+          아직 추가된 시험 항목이 없습니다.<br>
+          좌측 <b>수수료 원장</b>에서 항목을 검색해 클릭하거나, 분류 탭으로 찾아보세요.
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">성적서 발급 · 부대비용</div>
+      <div class="card-body extras">
+        <div class="extra-field">
+          <label>기본료 — 성적서 양식</label>
+          <div class="inputline">
+            <select id="baseType" onchange="recalc();markDirty()">
+              <option value="10000">일반 양식 (국/영문) — 10,000</option>
+              <option value="12000">현대자동차 MS 양식 — 12,000</option>
+              <option value="30000">MS 양식 + 별도조건(사진 등) — 30,000</option>
+              <option value="30000">Rivian/Geely 1항목 보고서 — 30,000</option>
+              <option value="50000">Rivian/Geely 2~5항목 — 50,000</option>
+              <option value="100000">Rivian/Geely 6항목 이상 — 100,000</option>
+              <option value="100000">참관(입회)시험 성적서 — 100,000</option>
+              <option value="0">직접 입력</option>
+            </select>
+            <input class="copies n" id="baseCopies" type="number" min="0" value="1" title="부수" oninput="recalc();markDirty()">
+          </div>
+          <div class="hint">부수 입력 · 직접 입력 시 우측 금액칸 수정</div>
+        </div>
+        <div class="extra-field"><label>기본료 금액(원)</label><input class="n" id="exBase" type="text" value="10,000" oninput="recalc();markDirty()"></div>
+        <div class="extra-field"><label>부본료(원)</label><input class="n" id="exCopy" type="text" value="0" oninput="recalc();markDirty()"></div>
+        <div class="extra-field"><label>번역부본료(원)</label><input class="n" id="exTrans" type="text" value="0" oninput="recalc();markDirty()"></div>
+        <div class="extra-field"><label>분리발급료(원)</label><input class="n" id="exSplit" type="text" value="0" oninput="recalc();markDirty()"></div>
+        <div class="extra-field"><label>시험시편료(원)</label><input class="n" id="exSpecimen" type="text" value="0" oninput="recalc();markDirty()"></div>
+        <div class="extra-field"><label>우송료(원)</label><input class="n" id="exPost" type="text" value="0" oninput="recalc();markDirty()"></div>
+        <div class="extra-field">
+          <label>부가세</label>
+          <select id="vatMode" onchange="recalc();markDirty()">
+            <option value="auto">자동 계산 (10%)</option>
+            <option value="zero">부가세 없음 (0원)</option>
+          </select>
+        </div>
+        <div class="extra-field"><label>부가세 금액(원)</label><input class="n" id="exVat" type="text" value="0" readonly style="background:var(--paper)"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- 하단 합계 -->
+<footer class="totalbar" id="appFoot" style="visibility:hidden">
+  <div class="t"><span class="lab">시험수수료 소계</span><span class="val" id="tSub">0</span></div>
+  <div class="t"><span class="lab">부대비용</span><span class="val" id="tExtra">0</span></div>
+  <div class="t"><span class="lab">부가세</span><span class="val" id="tVat">0</span></div>
+  <div class="t sum"><span class="lab">합계 (부가세포함)</span><span class="val" id="tGrand">₩0</span></div>
+  <div class="hangul" id="tHangul">일금 영원정</div>
+</footer>
+
+<!-- 견적 목록 -->
+<div class="overlay" id="listOverlay">
+  <div class="list-panel">
+    <div class="list-head">
+      <h3>견적 목록</h3>
+      <div class="status-filter" id="statusFilter"></div>
+      <input id="listSearch" placeholder="업체명·견적번호 검색" oninput="renderList()">
+      <button class="btn" onclick="closeList()">닫기</button>
+    </div>
+    <div style="max-height:62vh;overflow-y:auto">
+      <table class="qlist">
+        <thead><tr>
+          <th style="width:150px">견적번호</th><th>수신(업체)</th><th style="width:110px;text-align:right">합계(원)</th>
+          <th style="width:70px">상태</th><th style="width:90px">견적날짜</th><th style="width:80px">담당</th><th style="width:150px;text-align:right"></th>
+        </tr></thead>
+        <tbody id="listBody"></tbody>
+      </table>
+      <div class="list-empty" id="listEmpty" style="display:none">저장된 견적이 없습니다.<br>견적을 작성하고 <b>저장</b>을 누르면 여기에 쌓입니다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- 팀원 관리 (관리자 전용) -->
+<div class="overlay" id="adminOverlay">
+  <div class="list-panel" style="width:640px">
+    <div class="list-head">
+      <h3>팀원 관리</h3>
+      <span style="font-size:11px;color:var(--ink-soft)">승인된 팀원만 견적 데이터에 접근할 수 있습니다</span>
+      <button class="btn" onclick="closeAdmin()">닫기</button>
+    </div>
+    <div style="max-height:62vh;overflow-y:auto">
+      <table class="qlist">
+        <thead><tr>
+          <th>이름</th><th>이메일</th><th style="width:90px">상태</th><th style="width:90px">신청일</th><th style="width:150px;text-align:right"></th>
+        </tr></thead>
+        <tbody id="adminBody"></tbody>
+      </table>
+      <div class="list-empty" id="adminEmpty" style="display:none">아직 가입 신청한 팀원이 없습니다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- 견적서 미리보기 -->
+<div class="overlay" id="overlay">
+  <div class="sheet-shell">
+    <div class="sheet-tools">
+      <button class="btn" onclick="closePreview()">닫기</button>
+      <button class="btn btn-primary" onclick="window.print()">인쇄 / PDF 저장</button>
+    </div>
+    <div class="sheet" id="sheet"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+/* ═══════════════════════════════════════════════════════
+   ★ FIREBASE CONFIG ★
+   Firebase 콘솔 → 프로젝트 설정 → 내 앱(웹) 에서 복사한
+   firebaseConfig 객체를 아래에 그대로 붙여넣으세요.
+   ═══════════════════════════════════════════════════════ */
+const firebaseConfig = {
+  apiKey: "AIzaSyBlcR5jh8TnmAPIZhI2iC-H9Va8zyjPOwc",
+  authDomain: "fiti-quote.firebaseapp.com",
+  projectId: "fiti-quote",
+  storageBucket: "fiti-quote.firebasestorage.app",
+  messagingSenderId: "1019341883531",
+  appId: "1:1019341883531:web:d9592f6919af87aab52c8e"
+};
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+         onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, deleteDoc, addDoc,
+         query, orderBy, limit, runTransaction, serverTimestamp, writeBatch, updateDoc }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ═════════ 관리자 설정 ═════════
+   관리자 이메일 — 본인 계정으로 바꾸세요. (Firestore 규칙의 isAdmin에도 동일하게!)
+   관리자는 승인 절차 없이 바로 이용 + "팀원 관리" 버튼이 보입니다. */
+const ADMIN_EMAILS = ["cyd8964@gmail.com"];
+
+/* ═════════ 수수료 시드 데이터 (2026.06 개정안 발췌) ═════════
+   최초 1회 Firestore quote_fees 컬렉션에 업로드됨.
+   이후에는 Firestore가 원본 — 콘솔에서 단가 수정/항목 추가 가능. */
+const FEE_SEED = [
+ {cat:"환경",name:"내열성 (일반조건)",cond:"내열챔버 ~250 ℃ · 샘플 종류당",std:"-",type:"hourly",base:20000,per:500,perLabel:"시간",unit:"기본료+시간"},
+ {cat:"환경",name:"내한성 (일반조건)",cond:"내한챔버 ~ -40 ℃ · 샘플 종류당",std:"-",type:"hourly",base:30000,per:1000,perLabel:"시간",unit:"기본료+시간"},
+ {cat:"환경",name:"내습성 (일반조건)",cond:"온습도챔버 40℃/50℃ · 95 %R.H.",std:"-",type:"hourly",base:30000,per:1000,perLabel:"시간",unit:"기본료+시간"},
+ {cat:"환경",name:"내열싸이클성 (IR 조사)",cond:"IR챔버 · 72시간 기준 · 개(ea)당",std:"MS210-05 / MS210-06",type:"fixed",price:170000,unit:"개"},
+ {cat:"환경",name:"내열싸이클성 (IR 미조사)",cond:"IR챔버 · 72시간 기준 · 개(ea)당",std:"MS210-05 (C-2, D)",type:"fixed",price:100000,unit:"개"},
+ {cat:"환경",name:"내광성 42 MJ/m²",cond:"내광 처리 · 1종 3회 기준 · 140×60 mm",std:"MS210-05 D",type:"fixed",price:100000,unit:"종"},
+ {cat:"환경",name:"내광성 84 MJ/m²",cond:"내광 처리 · 1종 3회 기준",std:"MS210-05 B·C",type:"fixed",price:200000,unit:"종"},
+ {cat:"환경",name:"내광성 126 MJ/m²",cond:"내광 처리 · 1종 3회 기준",std:"MS210-05 X·A",type:"fixed",price:300000,unit:"종"},
+ {cat:"환경",name:"내후성 1250 kJ/m²",cond:"조사조도 0.75 W/m² · 1종 3회 기준",std:"MS210-06",type:"fixed",price:1200000,unit:"종"},
+ {cat:"환경",name:"내후성 2500 kJ/m²",cond:"조사조도 0.75 W/m² · 1종 3회 기준",std:"MS210-06",type:"fixed",price:2400000,unit:"종"},
+ {cat:"환경",name:"UV (QUV, 일반조건)",cond:"샘플 종류당",std:"-",type:"hourly",base:10000,per:1000,perLabel:"시간",unit:"기본료+시간"},
+ {cat:"환경",name:"내수성 (일반조건)",cond:"실온·항온 수조 · 전처리 포함",std:"-",type:"hourly",base:10000,per:1000,perLabel:"시간",unit:"기본료+시간"},
+ {cat:"환경",name:"내식성 (염수분무, 일반)",cond:"중성염수 35℃ · NaCl 5 %",std:"-",type:"hourly",base:10000,per:1000,perLabel:"시간",unit:"기본료+시간"},
+ {cat:"환경",name:"열충격 (소형 챔버, 단독)",cond:"(-40~150)℃ · 엘리베이터 방식",std:"-",type:"hourly",base:100000,per:7000,perLabel:"시간",unit:"기본료+시간"},
+ {cat:"환경",name:"워크인챔버 (단독)",cond:"(-50~150)℃ · (30~98)%R.H.",std:"-",type:"hourly",base:100000,per:20000,perLabel:"시간",unit:"기본료+시간"},
+ {cat:"물성",name:"중량",cond:"",std:"-",type:"fixed",price:5000,unit:"종"},
+ {cat:"물성",name:"두께",cond:"",std:"-",type:"fixed",price:10000,unit:"종"},
+ {cat:"물성",name:"두께 (필름·시트 평균두께)",cond:"중량 분석에 의한 평균 두께",std:"ISO 4591",type:"fixed",price:20000,unit:"종"},
+ {cat:"물성",name:"치수",cond:"",std:"-",type:"fixed",price:5000,unit:"종"},
+ {cat:"물성",name:"치수변화율",cond:"전·후 변화율 · 전처리 별도",std:"-",type:"fixed",price:10000,unit:"종"},
+ {cat:"물성",name:"비중",cond:"",std:"-",type:"fixed",price:15000,unit:"종"},
+ {cat:"물성",name:"경도 (듀로미터)",cond:"",std:"-",type:"fixed",price:10000,unit:"종"},
+ {cat:"물성",name:"압축경도 (폼·스펀지)",cond:"",std:"KS M 6672 · MS257-06",type:"fixed",price:20000,unit:"종"},
+ {cat:"물성",name:"섬유선밀도",cond:"",std:"ASTM D1577",type:"fixed",price:30000,unit:"종"},
+ {cat:"물성",name:"Cell Porosity (PPI)",cond:"",std:"MS257-06 외",type:"fixed",price:30000,unit:"종"},
+ {cat:"내구",name:"외관 · GREY SCALE",cond:"동시 판정 동일 수수료",std:"-",type:"fixed",price:5000,unit:"종"},
+ {cat:"내구",name:"부착성 (바둑판법)",cond:"",std:"ISO 2409",type:"fixed",price:20000,unit:"종"},
+ {cat:"내구",name:"충격강도 (듀폰식)",cond:"",std:"ISO 6272-2 · MS311-11",type:"fixed",price:20000,unit:"종"},
+ {cat:"내구",name:"내마모성 평면마모 (건식)",cond:"기본 1,000회 · 추가 1,000회당 10,000",std:"MS210-05 외",type:"perRun",base:30000,per:10000,perLabel:"추가 1,000회",unit:"종"},
+ {cat:"내구",name:"내마모성 마틴데일",cond:"기본 10,000회 · 추가 10,000회당 30,000",std:"-",type:"perRun",base:50000,per:30000,perLabel:"추가 10,000회",unit:"종"},
+ {cat:"내구",name:"내스크래치성 (사파이어법)",cond:"",std:"MS210-05",type:"fixed",price:30000,unit:"종"},
+ {cat:"내구",name:"내스크래치성 (에릭슨법, 초기)",cond:"색차(ΔL)·광택변화율 포함",std:"MS210-05 · MS210-06",type:"fixed",price:100000,unit:"종"},
+ {cat:"내구",name:"마찰착색성 (건식·습식)",cond:"",std:"MS300-31",type:"fixed",price:40000,unit:"종"},
+ {cat:"내구",name:"내약품성 (일반조건)",cond:"약품 1종류 · 1조건당 · WIPING/SPOT",std:"-",type:"fixed",price:25000,unit:"종"},
+ {cat:"내구",name:"내약품성",cond:"약품 3종",std:"MS210-05",type:"fixed",price:100000,unit:"종"},
+ {cat:"내구",name:"오염성 (건식 내오염성)",cond:"유니버셜 마모 · 판정비 포함",std:"MS210-05",type:"fixed",price:150000,unit:"종"},
+ {cat:"내구",name:"내치핑성 (하드칩, 상온)",cond:"염수분무 시간당 별도 · 시편 3개 초과 시 개당 추가",std:"-",type:"fixed",price:300000,unit:"종"},
+ {cat:"내구",name:"내진동성",cond:"지그제작 별도 1,000,000원(할인 미적용)",std:"MS210-05 / MS210-06",type:"fixed",price:680000,unit:"종"},
+ {cat:"내구",name:"저온취화 (기본 1조건)",cond:"온도 조건 추가 시 조건당 40,000",std:"-",type:"fixed",price:80000,unit:"종"},
+ {cat:"내구",name:"내굴곡성 (디마티아, 상온)",cond:"50,000회당",std:"-",type:"fixed",price:20000,unit:"종"},
+ {cat:"유해물질",name:"4대 중금속",cond:"Pb·Cr6+·Hg·Cd (각 2만원)",std:"MS201-02",type:"fixed",price:80000,unit:"종"},
+ {cat:"유해물질",name:"6대 유해물질",cond:"4대 중금속 + PBBs·PBDEs",std:"MS201-02",type:"fixed",price:180000,unit:"종"},
+ {cat:"난연",name:"연소성 수평법 (제시상태, 한방향)",cond:"일반 내장",std:"MS300-08",type:"fixed",price:60000,unit:"종"},
+ {cat:"난연",name:"연소성 수평법 (제시상태, 한방향·특수내장)",cond:"플라스틱·고무·테이프(+접착제)",std:"MS300-08",type:"fixed",price:70000,unit:"종"},
+ {cat:"난연",name:"연소성 수평법 (제시+고온방치, 한방향)",cond:"80℃ 168 h 전처리비 포함",std:"MS300-08",type:"fixed",price:224000,unit:"종"},
+ {cat:"난연",name:"해외자동차 수평연소성 (한방향)",cond:"시험횟수 5회 기준",std:"FMVSS 302 · SAE J369 외",type:"fixed",price:70000,unit:"종"},
+ {cat:"난연",name:"수평연소성 GB 8410 (한방향)",cond:"시험 종료 조건 20분",std:"GB 8410",type:"fixed",price:130000,unit:"종"},
+ {cat:"난연",name:"UL94 V·VTM (제시상태)",cond:"수직",std:"UL94",type:"fixed",price:120000,unit:"종"},
+ {cat:"난연",name:"UL94 V·VTM (제시+고온방치)",cond:"수직",std:"UL94",type:"fixed",price:250000,unit:"종"},
+ {cat:"난연",name:"MS940-01 수평연소성(HB)",cond:"제시상태",std:"MS940-01",type:"fixed",price:150000,unit:"종"},
+ {cat:"난연",name:"연기밀도",cond:"flaming · non-flaming 2조건",std:"ASTM E662",type:"fixed",price:400000,unit:"종"},
+ {cat:"난연",name:"산소지수",cond:"",std:"KS M ISO 4589-2 · ASTM D2863",type:"fixed",price:250000,unit:"종"},
+ {cat:"난연",name:"차실내장재 내인화성",cond:"자체 품질관리용 · 인증용 불가",std:"국토교통부 고시 별표1-38",type:"fixed",price:70000,unit:"종"},
+ {cat:"광학",name:"색도",cond:"",std:"-",type:"fixed",price:15000,unit:"종"},
+ {cat:"광학",name:"색차",cond:"",std:"-",type:"fixed",price:30000,unit:"종"},
+ {cat:"광학",name:"흐림도(Haze) · 전광선투과율",cond:"",std:"ASTM D1003",type:"fixed",price:15000,unit:"종"},
+ {cat:"광학",name:"흑색도",cond:"",std:"MS210-06",type:"fixed",price:25000,unit:"종"},
+ {cat:"광학",name:"황색도 / 황변도 (YI)",cond:"",std:"-",type:"fixed",price:25000,unit:"종"},
+ {cat:"광학",name:"광택",cond:"20°/60°/85° · 조건별 비용",std:"-",type:"fixed",price:10000,unit:"종"},
+ {cat:"광학",name:"접촉각 (증류수)",cond:"3~5회",std:"MS381-06 · KS L 2110",type:"fixed",price:50000,unit:"종"},
+ {cat:"광학",name:"내지문오염성 (표면에너지)",cond:"증류수·Diiodomethane",std:"MS200-42",type:"fixed",price:130000,unit:"종"},
+ {cat:"광학",name:"코팅두께 (광학현미경)",cond:"폴리싱 비용 포함",std:"-",type:"fixed",price:75000,unit:"종"},
+ {cat:"광학",name:"코팅두께 (SEM)",cond:"폴리싱 비용 포함",std:"-",type:"fixed",price:100000,unit:"종"},
+ {cat:"광학",name:"FT-IR / ATR 재질분석",cond:"유기물",std:"-",type:"fixed",price:50000,unit:"종"},
+ {cat:"광학",name:"전자현미경 (SEM)",cond:"컷당 · 부위 추가 10,000/컷",std:"-",type:"fixed",price:50000,unit:"컷"},
+ {cat:"광학",name:"SEM-EDS 성분분석",cond:"기본 1컷 1포인트 · 추가 50,000/포인트",std:"-",type:"perRun",base:100000,per:50000,perLabel:"추가 포인트",unit:"기본료"},
+ {cat:"열분석",name:"열변형온도 (HDT)",cond:"1종 2회 기준",std:"ASTM · ISO",type:"fixed",price:30000,unit:"종"},
+ {cat:"열분석",name:"열변형온도 (HDT, MS 기준)",cond:"1종 3~7회",std:"MS",type:"fixed",price:50000,unit:"종"},
+ {cat:"열분석",name:"비카트연화점 (VICAT)",cond:"1종 2회 기준",std:"ASTM · ISO",type:"fixed",price:30000,unit:"종"},
+ {cat:"열분석",name:"DSC 1st",cond:"",std:"-",type:"fixed",price:40000,unit:"종"},
+ {cat:"열분석",name:"DSC 2nd (Tm, Tg)",cond:"",std:"-",type:"fixed",price:60000,unit:"종"},
+ {cat:"열분석",name:"카본블랙함량 (TGA)",cond:"",std:"-",type:"fixed",price:75000,unit:"종"},
+ {cat:"열분석",name:"용융흐름지수 (MI)",cond:"플라스틱류만 진행",std:"-",type:"fixed",price:75000,unit:"종"},
+ {cat:"열분석",name:"열전도율 (평판열류계법)",cond:"",std:"KS L 9016 · ASTM C158",type:"fixed",price:50000,unit:"종"},
+ {cat:"전기",name:"표면저항",cond:"1종 5회 기준",std:"ASTM D257",type:"fixed",price:40000,unit:"종"},
+ {cat:"전기",name:"체적저항",cond:"1종 5회 기준",std:"ASTM D257",type:"fixed",price:40000,unit:"종"},
+ {cat:"전기",name:"대전방지성",cond:"",std:"MS210-05",type:"fixed",price:40000,unit:"종"},
+ {cat:"전기",name:"마찰대전성",cond:"로타리법 · 마찰포 2종(면·모)",std:"MS300-32",type:"fixed",price:20000,unit:"종"},
+ {cat:"전기",name:"절연파괴강도",cond:"1종 5회 기준",std:"ASTM D149 외",type:"fixed",price:250000,unit:"종"},
+ {cat:"전기",name:"내전압",cond:"접수 전 주관사업팀 문의",std:"MS945-02 외",type:"fixed",price:250000,unit:"종"},
+ {cat:"전기",name:"전위부식 (내식성)",cond:"정전위/동전위분극",std:"-",type:"hourly",base:100000,per:30000,perLabel:"시간",unit:"기본료+시간"},
+];
+
+const CATS = ["전체","환경","물성","내구","유해물질","난연","광학","열분석","전기"];
+const STATUSES = ["전체","작성중","발송","수주","실주"];
+const NO_PREFIX = "ETD"; // 견적번호 접두어 — 팀 규칙에 맞게 변경 가능
+
+/* ───────── 상태 ───────── */
+let FEE = [];
+let activeCat = "전체";
+let lines = [];
+let seq = 1;
+let currentId = null;     // Firestore 문서 id (null = 새 견적)
+let currentNo = null;     // 견적번호
+let dirty = false;
+let quotesCache = [];
+let listStatus = "전체";
+let db = null, auth = null;
+
+/* ───────── 유틸 ───────── */
+const $ = id => document.getElementById(id);
+const won = n => (isNaN(n)?0:Math.round(n)).toLocaleString("ko-KR");
+const parseWon = s => { const n = parseInt(String(s).replace(/[^\d-]/g,""),10); return isNaN(n)?0:n; };
+const esc = s => String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/"/g,"&quot;");
+
+function numToHangul(n){
+  if(n===0) return "영";
+  const d=["","일","이","삼","사","오","육","칠","팔","구"];
+  const small=["","십","백","천"], big=["","만","억","조"];
+  let result="", group=0;
+  while(n>0){
+    let part=n%10000, partStr="";
+    for(let i=0;i<4;i++){
+      const digit=part%10;
+      if(digit>0) partStr=d[digit]+small[i]+partStr;
+      part=Math.floor(part/10);
+    }
+    if(partStr) result=partStr+big[group]+result;
+    n=Math.floor(n/10000); group++;
+  }
+  return result;
+}
+function toast(msg){
+  const t=$("toast");
+  t.textContent=msg; t.classList.add("show");
+  clearTimeout(t._tm); t._tm=setTimeout(()=>t.classList.remove("show"),1800);
+}
+function markDirty(){
+  dirty=true;
+  $("saveBtn").innerHTML='저장<span class="saving-dot"></span>';
+}
+function clearDirty(){
+  dirty=false;
+  $("saveBtn").textContent="저장";
+}
+
+/* ───────── Firebase 초기화 + 승인제 인증 흐름 ───────── */
+const configMissing = Object.values(firebaseConfig).some(v=>String(v).includes("여기에"));
+let isAdmin=false, signupMode=false;
+if(configMissing){
+  $("setupGate").style.display="flex";
+}else{
+  const app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+  onAuthStateChanged(auth, async user=>{
+    if(!user){
+      $("authGate").style.display="flex";
+      $("pendingGate").style.display="none";
+      hideApp(); return;
+    }
+    $("authGate").style.display="none";
+    isAdmin = ADMIN_EMAILS.includes(user.email);
+    let approved = isAdmin;
+    if(!isAdmin){
+      try{
+        const uref=doc(db,"quote_users",user.uid);
+        const snap=await getDoc(uref);
+        if(!snap.exists()){
+          // 첫 로그인(구글 등) → 가입 신청 문서 자동 생성
+          await setDoc(uref,{
+            email:user.email, name:user.displayName||pendingName||"",
+            approved:false, requestedAt:serverTimestamp()
+          });
+        }else{
+          approved = snap.data().approved===true;
+        }
+      }catch(e){ console.error(e); }
+    }
+    if(approved){
+      $("pendingGate").style.display="none";
+      $("userChip").textContent=user.email.split("@")[0]+(isAdmin?" · 관리자":"");
+      $("adminBtn").style.display=isAdmin?"":"none";
+      showApp(); bootData();
+    }else{
+      $("pendingEmail").textContent=user.email;
+      $("pendingGate").style.display="flex";
+      hideApp();
+    }
+  });
+}
+function showApp(){ ["appTop","appBody","appFoot"].forEach(id=>$(id).style.visibility="visible"); }
+function hideApp(){ ["appTop","appBody","appFoot"].forEach(id=>$(id).style.visibility="hidden"); }
+
+let pendingName="";
+function toggleAuthMode(){
+  signupMode=!signupMode;
+  $("signupNameWrap").style.display=signupMode?"":"none";
+  $("authMainBtn").textContent=signupMode?"회원가입 신청":"로그인";
+  $("authSub").textContent=signupMode
+    ? "가입 신청 후 관리자가 승인하면 이용할 수 있습니다"
+    : "의장소재팀 견적 작성 시스템 — 로그인하세요";
+  $("authToggle").textContent=signupMode?"이미 계정이 있나요? 로그인":"처음이신가요? 회원가입 신청";
+  $("loginErr").classList.remove("show");
+}
+async function authSubmit(){ signupMode?await doSignup():await doLogin(); }
+
+async function doLogin(){
+  const err=$("loginErr"); err.classList.remove("show");
+  try{
+    await signInWithEmailAndPassword(auth, $("loginEmail").value.trim(), $("loginPw").value);
+  }catch(e){
+    const map={
+      "auth/invalid-credential":"이메일 또는 비밀번호가 올바르지 않습니다.",
+      "auth/invalid-email":"이메일 형식이 올바르지 않습니다.",
+      "auth/too-many-requests":"시도가 너무 많습니다. 잠시 후 다시 시도하세요.",
+      "auth/network-request-failed":"네트워크 연결을 확인하세요."
+    };
+    err.textContent=map[e.code]||("로그인 실패: "+e.code);
+    err.classList.add("show");
+  }
+}
+async function doSignup(){
+  const err=$("loginErr"); err.classList.remove("show");
+  const name=$("signupName").value.trim();
+  if(!name){ err.textContent="이름을 입력하세요. (예: 의장_홍길동)"; err.classList.add("show"); return; }
+  pendingName=name;
+  try{
+    const cred=await createUserWithEmailAndPassword(auth, $("loginEmail").value.trim(), $("loginPw").value);
+    await setDoc(doc(db,"quote_users",cred.user.uid),{
+      email:cred.user.email, name, approved:false, requestedAt:serverTimestamp()
+    });
+    // onAuthStateChanged가 승인 대기 화면으로 안내
+  }catch(e){
+    const map={
+      "auth/email-already-in-use":"이미 가입된 이메일입니다. 로그인하세요.",
+      "auth/weak-password":"비밀번호는 6자 이상이어야 합니다.",
+      "auth/invalid-email":"이메일 형식이 올바르지 않습니다."
+    };
+    err.textContent=map[e.code]||("가입 실패: "+e.code);
+    err.classList.add("show");
+  }
+}
+async function doGoogleLogin(){
+  const err=$("loginErr"); err.classList.remove("show");
+  try{
+    await signInWithPopup(auth, new GoogleAuthProvider());
+  }catch(e){
+    if(e.code==="auth/popup-closed-by-user") return;
+    err.textContent="Google 로그인 실패: "+e.code;
+    err.classList.add("show");
+  }
+}
+async function doLogout(){
+  if(dirty && !confirm("저장하지 않은 변경사항이 있습니다. 로그아웃할까요?")) return;
+  await signOut(auth);
+}
+
+/* ───────── 데이터 부트 (수수료 + 목록) ───────── */
+async function bootData(){
+  try{
+    const snap=await getDocs(query(collection(db,"quote_fees"), orderBy("order")));
+    if(snap.empty){
+      // 최초 1회 시드 업로드
+      $("feeRev").textContent="수수료표 초기 업로드 중…";
+      const batch=writeBatch(db);
+      FEE_SEED.forEach((f,i)=>{
+        const ref=doc(collection(db,"quote_fees"));
+        batch.set(ref,{...f, order:i});
+      });
+      batch.set(doc(db,"quote_meta","fees"),{rev:"2026-06", uploadedAt:serverTimestamp()});
+      await batch.commit();
+      FEE=FEE_SEED.map((f,i)=>({...f,order:i}));
+      toast("수수료표 초기 데이터를 업로드했습니다");
+    }else{
+      FEE=snap.docs.map(d=>d.data()).sort((a,b)=>(a.order??0)-(b.order??0));
+    }
+    $("feeRev").textContent=`REV. 2026-06 · ${FEE.length}항목`;
+    renderTabs(); renderLedger();
+    await refreshQuotes();
+  }catch(e){
+    console.error(e);
+    $("feeRev").textContent="오프라인 — 내장 수수료표 사용";
+    FEE=FEE_SEED; renderTabs(); renderLedger();
+    toast("Firestore 연결 실패 — 저장 기능을 사용할 수 없습니다");
+  }
+}
+
+async function refreshQuotes(){
+  const snap=await getDocs(query(collection(db,"quote_quotes"), orderBy("updatedAt","desc"), limit(100)));
+  quotesCache=snap.docs.map(d=>({id:d.id, ...d.data()}));
+  // 거래처 자동완성
+  const clients=[...new Set(quotesCache.map(q=>q.to).filter(Boolean))];
+  $("clientList").innerHTML=clients.map(c=>`<option value="${esc(c)}">`).join("");
+}
+
+/* ───────── 견적번호 채번 (연도별 순번, 트랜잭션) ───────── */
+async function issueQuoteNo(){
+  const year=new Date().getFullYear();
+  const ref=doc(db,"quote_counters",String(year));
+  const no=await runTransaction(db, async tx=>{
+    const snap=await tx.get(ref);
+    const next=(snap.exists()?snap.data().seq:0)+1;
+    tx.set(ref,{seq:next});
+    return `${NO_PREFIX}-${year}-${String(next).padStart(4,"0")}`;
+  });
+  return no;
+}
+
+/* ───────── 저장 / 불러오기 ───────── */
+function gather(){
+  return {
+    to:$("fTo").value.trim(), attn:$("fAttn").value.trim(),
+    date:$("fDate").value, valid:$("fValid").value.trim(),
+    staff:$("fStaff").value.trim(), tel:$("fTel").value.trim(),
+    reqType:$("fType").value, memo:$("fMemo").value.trim(),
+    status:$("quoteStatus").value,
+    lines:lines.map(l=>({...l})),
+    extras:{
+      baseTypeIdx:$("baseType").selectedIndex, baseCopies:parseInt($("baseCopies").value)||0,
+      base:parseWon($("exBase").value), copy:parseWon($("exCopy").value),
+      trans:parseWon($("exTrans").value), split:parseWon($("exSplit").value),
+      specimen:parseWon($("exSpecimen").value), post:parseWon($("exPost").value),
+    },
+    vatMode:$("vatMode").value,
+    totals:computeTotals(),
+  };
+}
+async function saveQuote(){
+  if(!db){ toast("Firebase 미연결 상태입니다"); return; }
+  const data=gather();
+  if(!data.to && !lines.length){ toast("업체명 또는 시험 항목을 입력하세요"); return; }
+  $("saveBtn").disabled=true;
+  try{
+    if(!currentNo) currentNo=await issueQuoteNo();
+    data.no=currentNo;
+    data.updatedAt=serverTimestamp();
+    data.updatedBy=auth.currentUser.email;
+    if(currentId){
+      await setDoc(doc(db,"quote_quotes",currentId), data, {merge:true});
+    }else{
+      data.createdAt=serverTimestamp();
+      data.createdBy=auth.currentUser.email;
+      const ref=await addDoc(collection(db,"quote_quotes"), data);
+      currentId=ref.id;
+    }
+    $("quoteNo").textContent=currentNo;
+    clearDirty();
+    toast(`저장 완료 — ${currentNo}`);
+    refreshQuotes();
+  }catch(e){
+    console.error(e); toast("저장 실패: "+(e.code||e.message));
+  }finally{
+    $("saveBtn").disabled=false;
+  }
+}
+
+function loadQuote(q){
+  currentId=q.id; currentNo=q.no||null;
+  $("quoteNo").textContent=currentNo||"— 새 견적 —";
+  $("quoteStatus").value=q.status||"작성중";
+  $("fTo").value=q.to||""; $("fAttn").value=q.attn||"";
+  $("fDate").value=q.date||""; $("fValid").value=q.valid||"30일";
+  $("fStaff").value=q.staff||""; $("fTel").value=q.tel||"";
+  $("fType").value=q.reqType||"일반 의뢰"; $("fMemo").value=q.memo||"";
+  lines=(q.lines||[]).map(l=>({...l, uid:seq++}));
+  const ex=q.extras||{};
+  $("baseType").selectedIndex=ex.baseTypeIdx??0;
+  $("baseCopies").value=ex.baseCopies??1;
+  $("exBase").value=won(ex.base??10000);
+  $("exCopy").value=won(ex.copy??0); $("exTrans").value=won(ex.trans??0);
+  $("exSplit").value=won(ex.split??0); $("exSpecimen").value=won(ex.specimen??0);
+  $("exPost").value=won(ex.post??0);
+  $("vatMode").value=q.vatMode||"auto";
+  renderLines(); recalc(); clearDirty();
+}
+
+function newQuote(){
+  if(dirty && !confirm("저장하지 않은 변경사항이 있습니다. 새 견적을 시작할까요?")) return;
+  currentId=null; currentNo=null; lines=[];
+  $("quoteNo").textContent="— 새 견적 —";
+  $("quoteStatus").value="작성중";
+  ["fTo","fAttn","fStaff","fTel","fMemo"].forEach(id=>$(id).value="");
+  $("fDate").valueAsDate=new Date(); $("fValid").value="30일";
+  $("fType").selectedIndex=0;
+  $("baseType").selectedIndex=0; $("baseCopies").value=1;
+  ["exCopy","exTrans","exSplit","exSpecimen","exPost"].forEach(id=>$(id).value="0");
+  renderLines(); recalc(); clearDirty();
+}
+
+async function duplicateQuote(id){
+  const q=quotesCache.find(x=>x.id===id); if(!q) return;
+  if(dirty && !confirm("저장하지 않은 변경사항이 있습니다. 계속할까요?")) return;
+  loadQuote({...q, id:null, no:null, status:"작성중"});
+  currentId=null; currentNo=null;
+  $("quoteNo").textContent="— 새 견적 (복제) —";
+  markDirty(); closeList();
+  toast("복제됨 — 저장 시 새 견적번호가 발급됩니다");
+}
+
+async function deleteQuote(id){
+  const q=quotesCache.find(x=>x.id===id); if(!q) return;
+  if(!confirm(`견적 「${q.no||"번호없음"} · ${q.to||"-"}」을(를) 삭제할까요?\n삭제하면 되돌릴 수 없습니다.`)) return;
+  await deleteDoc(doc(db,"quote_quotes",id));
+  if(currentId===id){ currentId=null; }
+  toast("삭제되었습니다");
+  await refreshQuotes(); renderList();
+}
+
+/* ───────── 팀원 관리 (관리자 전용) ───────── */
+let usersCache=[];
+async function openAdmin(){
+  const snap=await getDocs(query(collection(db,"quote_users"), orderBy("requestedAt","desc")));
+  usersCache=snap.docs.map(d=>({uid:d.id, ...d.data()}));
+  renderAdmin();
+  $("adminOverlay").classList.add("show");
+}
+function closeAdmin(){ $("adminOverlay").classList.remove("show"); }
+function renderAdmin(){
+  $("adminEmpty").style.display=usersCache.length?"none":"block";
+  $("adminBody").innerHTML=usersCache.map(u=>{
+    const d=u.requestedAt?.toDate ? u.requestedAt.toDate().toLocaleDateString("ko-KR") : "";
+    return `<tr>
+      <td style="font-weight:600">${esc(u.name||"-")}</td>
+      <td style="font-size:11.5px;color:var(--ink-soft)">${esc(u.email)}</td>
+      <td><span class="badge ${u.approved?"수주":"작성중"}">${u.approved?"승인됨":"대기중"}</span></td>
+      <td style="font-size:11.5px;color:var(--ink-soft)">${d}</td>
+      <td class="acts">
+        ${u.approved
+          ? `<button onclick="setApproval('${u.uid}',false)">승인 취소</button>`
+          : `<button onclick="setApproval('${u.uid}',true)" style="background:var(--fiti-teal);border-color:var(--fiti-teal);color:#fff">승인</button>`}
+        <button class="danger" onclick="removeUser('${u.uid}')">삭제</button>
+      </td>
+    </tr>`;
+  }).join("");
+}
+async function setApproval(uid,val){
+  try{
+    await updateDoc(doc(db,"quote_users",uid),{approved:val, approvedAt:serverTimestamp()});
+    const u=usersCache.find(x=>x.uid===uid); if(u) u.approved=val;
+    renderAdmin();
+    toast(val?"승인했습니다 — 해당 팀원은 새로고침 후 이용 가능":"승인을 취소했습니다");
+  }catch(e){ console.error(e); toast("처리 실패: "+(e.code||e.message)); }
+}
+async function removeUser(uid){
+  const u=usersCache.find(x=>x.uid===uid); if(!u) return;
+  if(!confirm(`「${u.name||u.email}」의 가입 정보를 삭제할까요?\n(접근 권한이 사라집니다. 로그인 계정 자체의 삭제는 Firebase 콘솔 → Authentication에서 가능합니다)`)) return;
+  try{
+    await deleteDoc(doc(db,"quote_users",uid));
+    usersCache=usersCache.filter(x=>x.uid!==uid);
+    renderAdmin(); toast("삭제되었습니다");
+  }catch(e){ console.error(e); toast("삭제 실패: "+(e.code||e.message)); }
+}
+
+/* ───────── 견적 목록 UI ───────── */
+function openList(){
+  renderStatusFilter(); renderList();
+  $("listOverlay").classList.add("show");
+}
+function closeList(){ $("listOverlay").classList.remove("show"); }
+function renderStatusFilter(){
+  $("statusFilter").innerHTML=STATUSES.map(s=>
+    `<button class="${s===listStatus?"on":""}" onclick="setListStatus('${s}')">${s}</button>`).join("");
+}
+function setListStatus(s){ listStatus=s; renderStatusFilter(); renderList(); }
+function fmtDate(q){
+  if(q.date) return q.date;
+  return "";
+}
+function renderList(){
+  const kw=$("listSearch").value.trim().toLowerCase();
+  const rows=quotesCache.filter(q=>{
+    const stOk=listStatus==="전체"||q.status===listStatus;
+    const text=((q.no||"")+" "+(q.to||"")+" "+(q.attn||"")).toLowerCase();
+    return stOk && (!kw||text.includes(kw));
+  });
+  $("listEmpty").style.display=rows.length?"none":"block";
+  $("listBody").innerHTML=rows.map(q=>`
+    <tr class="row" onclick="pickQuote('${q.id}')">
+      <td style="font-family:var(--mono);font-size:11.5px">${esc(q.no||"—")}</td>
+      <td style="font-weight:600">${esc(q.to||"-")}<span style="color:var(--ink-soft);font-weight:400;font-size:11px"> ${esc(q.attn?(" · "+q.attn):"")}</span></td>
+      <td class="num">${won(q.totals?.grand||0)}</td>
+      <td><span class="badge ${esc(q.status||"작성중")}">${esc(q.status||"작성중")}</span></td>
+      <td style="font-size:11.5px;color:var(--ink-soft)">${esc(fmtDate(q))}</td>
+      <td style="font-size:11.5px;color:var(--ink-soft)">${esc(q.staff||"")}</td>
+      <td class="acts" onclick="event.stopPropagation()">
+        <button onclick="pickQuote('${q.id}')">열기</button>
+        <button onclick="duplicateQuote('${q.id}')">복제</button>
+        <button class="danger" onclick="deleteQuote('${q.id}')">삭제</button>
+      </td>
+    </tr>`).join("");
+}
+function pickQuote(id){
+  const q=quotesCache.find(x=>x.id===id); if(!q) return;
+  if(dirty && !confirm("저장하지 않은 변경사항이 있습니다. 다른 견적을 열까요?")) return;
+  loadQuote(q); closeList();
+}
+
+/* ───────── 좌측 원장 ───────── */
+function renderTabs(){
+  $("catTabs").innerHTML = CATS.map(c=>
+    `<button class="cat-tab ${c===activeCat?"on":""}" onclick="setCat('${c}')">${c}</button>`).join("");
+}
+function setCat(c){ activeCat=c; renderTabs(); renderLedger(); }
+function priceLabel(f){
+  if(f.type==="fixed") return `${won(f.price)}<small> /${f.unit}</small>`;
+  return `${won(f.base)}<small> +${won(f.per)}/${f.perLabel}</small>`;
+}
+function renderLedger(){
+  const q=$("searchInput").value.trim().toLowerCase();
+  const list=FEE.filter(f=>{
+    const catOk = activeCat==="전체"||f.cat===activeCat;
+    const text=(f.name+" "+(f.cond||"")+" "+(f.std||"")+" "+f.cat).toLowerCase();
+    return catOk && (!q || text.includes(q));
+  });
+  const el=$("ledgerList");
+  if(!list.length){
+    el.innerHTML=`<div class="ledger-empty">검색 결과가 없습니다.<br>다른 키워드나 분류 탭을 사용해 보세요.</div>`;
+    return;
+  }
+  el.innerHTML=list.map(f=>{
+    const idx=FEE.indexOf(f);
+    return `<button class="fee-item" onclick="addLine(${idx})" title="견적에 추가">
+      <div class="row1"><span class="name">${esc(f.name)}</span><span class="price">${priceLabel(f)}</span></div>
+      <div class="row2"><span class="chip cat">${esc(f.cat)}시험</span>${f.std&&f.std!=="-"?`<span class="chip">${esc(f.std)}</span>`:""}</div>
+      ${f.cond?`<div class="cond">${esc(f.cond)}</div>`:""}
+    </button>`;
+  }).join("");
+}
+
+/* ───────── 견적 라인 ───────── */
+function addLine(idx){
+  const f=FEE[idx];
+  lines.push({
+    uid:seq++, cat:f.cat+"시험", name:f.name, std:(f.std==="-"?"":f.std)||"",
+    type:f.type,
+    price:f.type==="fixed"?f.price:f.base,
+    per:f.per||0, perLabel:f.perLabel||"", qtyPer:f.type==="hourly"?24:0,
+    samples:1, days:7, note:f.cond||""
+  });
+  renderLines(); recalc(); markDirty();
+  toast(`「${f.name}」 추가됨`);
+}
+function removeLine(uid){ lines=lines.filter(l=>l.uid!==uid); renderLines(); recalc(); markDirty(); }
+function lineFee(l){
+  const unit = l.type==="fixed" ? l.price : (l.price + l.per*(l.qtyPer||0));
+  return unit * (l.samples||0);
+}
+function renderLines(){
+  const tb=$("lineBody");
+  $("linesEmpty").style.display = lines.length?"none":"block";
+  $("lineCount").textContent = lines.length?`(${lines.length}건)`:"";
+  tb.innerHTML = lines.map(l=>`
+    <tr>
+      <td style="color:var(--ink-soft);font-size:11.5px;white-space:nowrap">${esc(l.cat)}</td>
+      <td><input value="${esc(l.name)}" onchange="upd(${l.uid},'name',this.value)"></td>
+      <td><input value="${esc(l.std)}" class="std-tag" onchange="upd(${l.uid},'std',this.value)" placeholder="-"></td>
+      <td><input class="n" value="${won(l.price)}" onchange="updWon(${l.uid},'price',this.value)"></td>
+      <td>${l.per?`<span class="hour-wrap"><input class="n" type="number" min="0" value="${l.qtyPer}" onchange="upd(${l.uid},'qtyPer',parseInt(this.value)||0)"> ${esc(l.perLabel)}<br><span style="font-size:10px">(+${won(l.per)}/단위)</span></span>`:`<span style="color:var(--line)">—</span>`}</td>
+      <td><input class="n" type="number" min="0" value="${l.samples}" onchange="upd(${l.uid},'samples',parseInt(this.value)||0)"></td>
+      <td class="num" style="font-weight:700">${won(lineFee(l))}</td>
+      <td><input class="n" type="number" min="0" value="${l.days}" onchange="upd(${l.uid},'days',parseInt(this.value)||0)"></td>
+      <td><input value="${esc(l.note)}" onchange="upd(${l.uid},'note',this.value)" style="font-size:11.5px"></td>
+      <td><button class="del" onclick="removeLine(${l.uid})" title="삭제">×</button></td>
+    </tr>`).join("") + (lines.length?`
+    <tr class="subtotal-row">
+      <td colspan="6" style="text-align:right;letter-spacing:.05em">시험수수료 소계</td>
+      <td class="num" id="subCell">0</td><td colspan="3"></td>
+    </tr>`:"");
+}
+function upd(uid,key,val){
+  const l=lines.find(x=>x.uid===uid); if(!l) return;
+  l[key]=val; renderLines(); recalc(); markDirty();
+}
+function updWon(uid,key,val){ upd(uid,key,parseWon(val)); }
+
+/* ───────── 합계 ───────── */
+function computeTotals(){
+  const sub = lines.reduce((s,l)=>s+lineFee(l),0);
+  const extras = ["exBase","exCopy","exTrans","exSplit","exSpecimen","exPost"]
+    .reduce((s,id)=>s+parseWon($(id).value),0);
+  const vat = $("vatMode").value==="auto" ? Math.round((sub+extras)*0.1) : 0;
+  return {sub, extras, vat, grand:sub+extras+vat};
+}
+function recalc(){
+  const sel=$("baseType");
+  const copies=parseInt($("baseCopies").value)||0;
+  if(sel.options[sel.selectedIndex].text!=="직접 입력"){
+    $("exBase").value=won(parseInt(sel.value)*copies);
+  }
+  const t=computeTotals();
+  $("exVat").value=won(t.vat);
+  const subCell=$("subCell");
+  if(subCell) subCell.textContent=won(t.sub);
+  $("tSub").textContent=won(t.sub);
+  $("tExtra").textContent=won(t.extras);
+  $("tVat").textContent=won(t.vat);
+  $("tGrand").textContent="₩"+won(t.grand);
+  $("tHangul").textContent="일금 "+numToHangul(t.grand)+"원정 (부가세포함)";
+  ["exCopy","exTrans","exSplit","exSpecimen","exPost"].forEach(id=>{
+    const el=$(id);
+    if(document.activeElement!==el) el.value=won(parseWon(el.value));
+  });
+}
+
+/* ───────── 견적서 미리보기 ───────── */
+function openPreview(){
+  const g=id=>$(id).value;
+  const t=computeTotals();
+  const ex=id=>parseWon($(id).value);
+  const maxDays=lines.length?Math.max(...lines.map(l=>l.days||0)):0;
+  const dateStr=g("fDate")?new Date(g("fDate")).toLocaleDateString("ko-KR",{year:"numeric",month:"long",day:"numeric"}):"";
+
+  const rows=lines.map(l=>`
+    <tr>
+      <td class="c" style="white-space:nowrap">${esc(l.cat)}</td>
+      <td>${esc(l.name)}${l.per&&l.qtyPer?`<br><span style="font-size:10px;color:#444">기본 ${won(l.price)} + ${esc(l.perLabel)} ${l.qtyPer} × ${won(l.per)}</span>`:""}</td>
+      <td class="c" style="font-family:var(--mono);font-size:10.5px">${esc(l.std)||"-"}</td>
+      <td class="r">${won(l.type==="fixed"?l.price:l.price+l.per*l.qtyPer)}</td>
+      <td class="c">${l.samples}</td>
+      <td class="r">${won(lineFee(l))}</td>
+      <td class="c">${l.days||"-"}</td>
+      <td style="font-size:10px">${esc(l.note)}</td>
+    </tr>`).join("") || `<tr><td colspan="8" class="c" style="padding:18px;color:#888">시험 항목 없음</td></tr>`;
+
+  $("sheet").innerHTML=`
+    <div class="doc-title">견적서<span class="logo">FITI<small>FITI Testing &amp; Research Institute</small></span></div>
+    <div class="sheet-headgrid">
+      <div>
+        <div class="kv"><b>수 신</b><span class="v">${esc(g("fTo"))||"&nbsp;"}<span class="suffix">귀중</span></span></div>
+        <div class="kv"><b>참 조</b><span class="v">${esc(g("fAttn"))||"&nbsp;"}<span class="suffix">님</span></span></div>
+        <div class="kv"><b>견적날짜</b><span class="v">${dateStr}<span class="suffix">(유효기간 ${esc(g("fValid"))})</span></span></div>
+        <div class="kv"><b>견적번호</b><span class="v" style="font-family:var(--mono)">${esc(currentNo||"(저장 시 발급)")}</span></div>
+      </div>
+      <div>
+        <div class="kv"><b>상 호</b><span class="v">(재)FITI시험연구원 오창분원</span></div>
+        <div class="kv"><b>사업자등록번호</b><span class="v">317-82-04050<span class="suffix">대표자&nbsp;&nbsp;윤주경</span></span></div>
+        <div class="kv"><b>주 소</b><span class="v">(28115) 충북 청주시 청원구 오창읍 양청3길 43</span></div>
+        <div class="kv"><b>전화번호</b><span class="v">${esc(g("fTel"))}<span class="suffix">담당자&nbsp;&nbsp;${esc(g("fStaff"))}</span></span></div>
+      </div>
+    </div>
+    <div class="amount-band">
+      <b>견적금액</b><span class="han">일금 ${numToHangul(t.grand)}원정</span>
+      <span class="won">( ₩${won(t.grand)} )</span><span class="tax">※ 부가세포함</span>
+    </div>
+    <table class="sheet-table">
+      <thead><tr>
+        <th style="width:54px">구분</th><th>항목</th><th style="width:120px">표준번호/시험방법</th>
+        <th style="width:78px">단가</th><th style="width:46px">시료수<br>(종)</th>
+        <th style="width:88px">시험수수료<br>(원)</th><th style="width:52px">소요일<br>(주말제외)</th><th style="width:96px">비고</th>
+      </tr></thead>
+      <tbody>${rows}
+        <tr class="grand"><td colspan="5" class="c" style="letter-spacing:.2em">시험수수료 소계</td>
+        <td class="r">${won(t.sub)}</td><td class="c">${maxDays||"-"}</td><td></td></tr>
+      </tbody>
+    </table>
+    <div class="sheet-bottom">
+      <div class="bank">
+        <b>입금계좌</b>&nbsp; 국민은행 443701-04-120610<br>
+        <b>예 금 주</b>&nbsp; (재)FITI시험연구원 오창분원
+      </div>
+      <table>
+        <tr><td>기본료</td><td class="r">${won(ex("exBase"))}</td></tr>
+        <tr><td>부본료</td><td class="r">${won(ex("exCopy"))}</td></tr>
+        <tr><td>번역부본료</td><td class="r">${won(ex("exTrans"))}</td></tr>
+        <tr><td>분리발급료</td><td class="r">${won(ex("exSplit"))}</td></tr>
+        <tr><td>시험시편료</td><td class="r">${won(ex("exSpecimen"))}</td></tr>
+        <tr><td>우송료</td><td class="r">${won(ex("exPost"))}</td></tr>
+        <tr><td>부가세</td><td class="r">${won(t.vat)}</td></tr>
+        <tr class="grand"><td>합&nbsp;&nbsp;계</td><td class="r">${won(t.grand)}</td></tr>
+      </table>
+    </div>
+    <div class="refs">
+      <b>[참고사항]</b><br>
+      1. 사진 및 그래프 등 기타 추가사항에 대하여 시험수수료가 변경될 수 있습니다.<br>
+      2. 시료 반납 요청시 우송료가 변경 될 수 있습니다.<br>
+      3. E-MAIL로 받으신 성적서의 열람은 시험수수료 입금 확인 후 열람 가능합니다.<br>
+      4. 성적서의 기재사항 변경 및 분리발급(시료별 또는 시험항목별)은 발행일로부터 7일 이내만 가능합니다. (수수료 추가 발생)
+    </div>
+    <div class="sheet-sign">(재) F I T I 시 험 연 구 원 장<span class="stamp">職<br>印</span></div>
+  `;
+  $("overlay").classList.add("show");
+}
+function closePreview(){ $("overlay").classList.remove("show"); }
+$("overlay").addEventListener("click",e=>{ if(e.target.id==="overlay") closePreview(); });
+$("listOverlay").addEventListener("click",e=>{ if(e.target.id==="listOverlay") closeList(); });
+$("adminOverlay").addEventListener("click",e=>{ if(e.target.id==="adminOverlay") closeAdmin(); });
+window.addEventListener("beforeunload",e=>{ if(dirty){ e.preventDefault(); e.returnValue=""; } });
+
+/* ───────── 전역 노출 (onclick 핸들러용) ───────── */
+Object.assign(window,{
+  doLogin, doSignup, doGoogleLogin, doLogout, authSubmit, toggleAuthMode,
+  openAdmin, closeAdmin, setApproval, removeUser,
+  newQuote, saveQuote, openList, closeList, setListStatus,
+  pickQuote, duplicateQuote, deleteQuote, setCat, addLine, removeLine, upd, updWon,
+  recalc, markDirty, openPreview, closePreview, renderLedger, renderList
+});
+
+/* ───────── 초기 화면 ───────── */
+$("fDate").valueAsDate=new Date();
+renderTabs(); renderLines(); recalc();
+</script>
+</body>
+</html>
