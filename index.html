@@ -322,6 +322,23 @@
   .qlist .acts button.danger:hover{background:#FBEAEA;border-color:#E5B6B0;color:#B0392E}
   .list-empty{padding:40px;text-align:center;color:var(--ink-soft);font-size:12.5px;line-height:1.7}
 
+  /* ── 템플릿 하위 항목 선택 ── */
+  .tpl-row{cursor:pointer}
+  .tpl-row .tpl-caret{display:inline-block;width:14px;color:var(--fiti-teal);font-size:10px}
+  .tpl-row.open td{background:var(--fiti-teal-soft)!important}
+  .tpl-detail > td{padding:0!important;background:#F7FBFC;border-bottom:1px solid var(--line)}
+  .tpl-detail-head{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line-soft);position:sticky;top:0;background:#F7FBFC;z-index:1}
+  .tpl-allchk{font-size:12px;font-weight:700;color:var(--fiti-blue);display:flex;align-items:center;gap:6px;cursor:pointer}
+  .tpl-items{padding:6px 14px 12px}
+  .tpl-item{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:12px;border:1px solid transparent}
+  .tpl-item:hover{background:#fff;border-color:var(--line)}
+  .tpl-item.on{background:#fff;border-color:var(--line-soft)}
+  .tpl-item input{flex:none;width:15px;height:15px;accent-color:var(--fiti-teal)}
+  .tpl-item .ti-name{flex:1;font-weight:600;color:var(--ink)}
+  .tpl-item .ti-std{font-family:var(--mono);font-size:10.5px;color:var(--ink-soft);flex:0 0 auto;max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tpl-item .ti-price{font-family:var(--mono);font-size:11.5px;color:var(--fiti-blue);width:96px;text-align:right;flex:none}
+  .tpl-item .ti-days{font-family:var(--mono);font-size:10.5px;color:var(--ink-soft);width:42px;text-align:right;flex:none}
+
   /* ───────── 로그인 / 설정 게이트 ───────── */
   .gate{position:fixed;inset:0;z-index:300;background:linear-gradient(160deg,#08355C 0%,#0B4F8A 55%,#0E8C96 130%);display:flex;align-items:center;justify-content:center;padding:20px}
   .gate-card{width:380px;max-width:100%;background:#fff;border-radius:14px;padding:34px 32px 30px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
@@ -731,6 +748,8 @@ let activeCat = "전체";
 let lines = [];
 let subMult = 1;   // 시험수수료 소계 배수(참관/지급/데이터개개치)
 let seq = 1;
+let tplOpen = -1;          // 펼쳐진 템플릿 인덱스(TPL 기준), -1=없음
+let tplSel = new Set();    // 펼친 템플릿의 선택된 하위 항목 인덱스
 let currentId = null;     // Firestore 문서 id (null = 새 견적)
 let currentNo = null;     // 견적번호
 let dirty = false;
@@ -1061,7 +1080,7 @@ function openTpl(){
   $("tplOverlay").classList.add("show");
   $("tplSearch").focus();
 }
-function closeTpl(){ $("tplOverlay").classList.remove("show"); }
+function closeTpl(){ tplOpen=-1; tplSel=new Set(); $("tplOverlay").classList.remove("show"); }
 function renderTpl(){
   const kw=$("tplSearch").value.trim().toLowerCase();
   const rows=TPL.map((t,i)=>({...t,_i:i})).filter(t=>
@@ -1069,25 +1088,71 @@ function renderTpl(){
   $("tplEmpty").style.display=rows.length?"none":"block";
   $("tplBody").innerHTML=rows.map(t=>{
     const sum=t.items.reduce((s,it)=>s+it.price*it.samples,0);
-    return `<tr class="row">
-      <td style="font-family:var(--mono);font-size:11.5px;font-weight:700;color:var(--fiti-blue)">${esc(t.code)}</td>
+    const open=t._i===tplOpen;
+    const head=`<tr class="row tpl-row${open?" open":""}" onclick="toggleTplItems(${t._i})">
+      <td style="font-family:var(--mono);font-size:11.5px;font-weight:700;color:var(--fiti-blue)"><span class="tpl-caret">${open?"▾":"▸"}</span>${esc(t.code)}</td>
       <td style="font-size:12px">${esc(t.title)}</td>
       <td style="font-family:var(--mono);font-size:10.5px;color:var(--ink-soft)">${esc(t.rev)}</td>
       <td class="num">${t.items.length}</td>
       <td class="num">${won(sum)}</td>
-      <td class="acts">
-        <button onclick="applyTpl(${t._i},'replace')" style="background:var(--fiti-teal);border-color:var(--fiti-teal);color:#fff">교체</button>
-        <button onclick="applyTpl(${t._i},'append')">추가</button>
+      <td class="acts" onclick="event.stopPropagation()">
+        <button onclick="applyTpl(${t._i},'replace')" style="background:var(--fiti-teal);border-color:var(--fiti-teal);color:#fff" title="전체 항목으로 교체">전체교체</button>
+        <button onclick="applyTpl(${t._i},'append')" title="전체 항목 추가">전체추가</button>
         ${isAdmin&&t.id?`<button class="danger" onclick="deleteTpl('${t.id}')">삭제</button>`:""}
       </td>
     </tr>`;
+    if(!open) return head;
+    const detail=`<tr class="tpl-detail"><td colspan="6">
+      <div class="tpl-detail-head">
+        <label class="tpl-allchk"><input type="checkbox" id="tplAllChk" onchange="tplSelectAll(this.checked)" ${tplSel.size===t.items.length?"checked":""}> 전체 선택</label>
+        <span id="tplSelCount" style="color:var(--ink-soft);font-size:11.5px"></span>
+        <span style="margin-left:auto;display:flex;gap:6px">
+          <button class="btn" style="padding:5px 12px;font-size:12px;background:var(--fiti-teal);border-color:var(--fiti-teal);color:#fff" onclick="applyTplSelected('replace')">선택항목 교체</button>
+          <button class="btn" style="padding:5px 12px;font-size:12px" onclick="applyTplSelected('append')">선택항목 추가</button>
+        </span>
+      </div>
+      <div class="tpl-items">
+        ${t.items.map((it,idx)=>`
+          <label class="tpl-item${tplSel.has(idx)?" on":""}">
+            <input type="checkbox" ${tplSel.has(idx)?"checked":""} onchange="tplToggleItem(${idx},this.checked)">
+            <span class="ti-name">${esc(it.name)}</span>
+            <span class="ti-std">${esc(it.std||"")}</span>
+            <span class="ti-price">${won(it.price)}${it.samples>1?` ×${it.samples}`:""}</span>
+            <span class="ti-days">${it.days?it.days+"일":""}</span>
+          </label>`).join("")}
+      </div>
+    </td></tr>`;
+    return head+detail;
   }).join("");
+  updateTplSelCount();
 }
-function applyTpl(i,mode){
-  const t=TPL[i]; if(!t) return;
+function toggleTplItems(i){
+  if(tplOpen===i){ tplOpen=-1; tplSel=new Set(); }
+  else { tplOpen=i; tplSel=new Set((TPL[i]?.items||[]).map((_,idx)=>idx)); } // 기본 전체 선택
+  renderTpl();
+}
+function tplToggleItem(idx,on){
+  if(on) tplSel.add(idx); else tplSel.delete(idx);
+  const lbl=document.querySelectorAll("#tplBody .tpl-item")[idx];
+  if(lbl) lbl.classList.toggle("on",on);
+  const all=$("tplAllChk"); const total=TPL[tplOpen]?.items.length||0;
+  if(all) all.checked = tplSel.size===total;
+  updateTplSelCount();
+}
+function tplSelectAll(on){
+  const items=TPL[tplOpen]?.items||[];
+  tplSel = on ? new Set(items.map((_,idx)=>idx)) : new Set();
+  renderTpl();
+}
+function updateTplSelCount(){
+  const el=$("tplSelCount"); if(!el) return;
+  const total=TPL[tplOpen]?.items.length||0;
+  el.textContent=`· ${tplSel.size}/${total}개 선택`;
+}
+function _applyTplItems(t,items,mode){
   if(mode==="replace" && lines.length &&
-     !confirm(`현재 시험 항목 ${lines.length}건을 비우고\n「${t.code} ${t.title}」 ${t.items.length}건으로 교체할까요?`)) return;
-  const newLines=t.items.map(it=>({
+     !confirm(`현재 시험 항목 ${lines.length}건을 비우고\n「${t.code} ${t.title}」 ${items.length}건으로 교체할까요?`)) return;
+  const newLines=items.map(it=>({
     uid:seq++, cat:it.g||"", name:it.name, std:it.std||"",
     type:"fixed", price:it.price, per:0, perLabel:"", qtyPer:0,
     samples:it.samples||1, days:it.days||0, note:""
@@ -1097,7 +1162,17 @@ function applyTpl(i,mode){
   $("fType").value="현대자동차(MS)";
   if($("baseType").selectedIndex===0) $("baseType").selectedIndex=1; // MS 양식 12,000
   renderLines(); recalc(); markDirty(); closeTpl();
-  toast(`${t.code} 템플릿 ${t.items.length}건 ${mode==="replace"?"적용":"추가"}됨`);
+  toast(`${t.code} ${items.length}건 ${mode==="replace"?"적용":"추가"}됨`);
+}
+function applyTpl(i,mode){
+  const t=TPL[i]; if(!t) return;
+  _applyTplItems(t, t.items, mode);
+}
+function applyTplSelected(mode){
+  const t=TPL[tplOpen]; if(!t) return;
+  const items=t.items.filter((_,idx)=>tplSel.has(idx));
+  if(!items.length){ toast("선택된 항목이 없습니다"); return; }
+  _applyTplItems(t, items, mode);
 }
 
 async function saveAsTpl(){
@@ -1740,6 +1815,7 @@ Object.assign(window,{
   doLogin, doSignup, doGoogleLogin, doLogout, authSubmit, toggleAuthMode,
   openAdmin, closeAdmin, setApproval, removeUser,
   openTpl, closeTpl, renderTpl, applyTpl, saveAsTpl, deleteTpl,
+  toggleTplItems, tplToggleItem, tplSelectAll, applyTplSelected,
   toggleFeeEdit, openFeeEdit, closeFeeEdit, feTypeChanged, saveFee, deleteFee, reseedFees,
   newQuote, saveQuote, openList, closeList, setListStatus,
   pickQuote, duplicateQuote, deleteQuote, setCat, addLine, removeLine, upd, updWon,
