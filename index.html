@@ -425,6 +425,7 @@ service cloud.firestore {
     </select>
     <span class="user-chip" id="userChip"></span>
     <button class="btn btn-ghost-dark" id="adminBtn" style="display:none" onclick="openAdmin()">팀원 관리</button>
+    <button class="btn btn-ghost-dark" onclick="openStd()">규격자료실</button>
     <button class="btn btn-ghost-dark" onclick="openList()">견적 목록</button>
     <button class="btn btn-ghost-dark" onclick="newQuote()">새 견적</button>
     <button class="btn btn-save" id="saveBtn" onclick="saveQuote()">저장</button>
@@ -561,6 +562,36 @@ service cloud.firestore {
   </div>
 </div>
 
+<!-- 규격자료실 (MS 표준 원문) -->
+<div class="overlay" id="stdOverlay">
+  <div class="list-panel" style="width:780px">
+    <div class="list-head">
+      <h3>규격자료실 <span style="font-size:11px;color:var(--ink-soft);font-weight:500">MS 표준 원문</span></h3>
+      <div class="status-filter" id="stdSeriesFilter"></div>
+      <input id="stdSearch" placeholder="규격코드 검색 (예: MS201-02)" oninput="renderStd()">
+      <button class="btn" onclick="closeStd()">닫기</button>
+    </div>
+    <div id="stdAdminBar" style="display:none;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--line-soft);font-size:12px;align-items:center;gap:10px;flex-wrap:wrap">
+      <label class="btn btn-primary" style="display:inline-block;margin:0">
+        ＋ 규격 PDF 대량 업로드
+        <input id="stdFileInput" type="file" accept="application/pdf" multiple webkitdirectory style="display:none" onchange="uploadStandards(this.files)">
+      </label>
+      <span style="color:var(--ink-soft)">폴더(예: <b>압축</b>)를 선택하면 PDF 전체가 업로드됩니다. 같은 파일은 덮어씁니다.</span>
+      <span id="stdUploadStatus" style="margin-left:auto;font-family:var(--mono);color:var(--fiti-blue);font-weight:700"></span>
+    </div>
+    <div style="max-height:60vh;overflow-y:auto">
+      <table class="qlist">
+        <thead><tr>
+          <th style="width:150px">규격코드</th><th style="width:80px">Rev</th><th>파일명</th>
+          <th style="width:70px;text-align:right">크기</th><th style="width:150px;text-align:right"></th>
+        </tr></thead>
+        <tbody id="stdBody"></tbody>
+      </table>
+      <div class="list-empty" id="stdEmpty" style="display:none">등록된 규격 자료가 없습니다.<br>관리자가 <b>＋ 규격 PDF 대량 업로드</b>로 자료를 올리면 여기에 쌓입니다.</div>
+    </div>
+  </div>
+</div>
+
 <!-- 팀원 관리 (관리자 전용) -->
 <div class="overlay" id="adminOverlay">
   <div class="list-panel" style="width:640px">
@@ -670,6 +701,8 @@ import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
 import { getFirestore, collection, doc, getDoc, getDocs, setDoc, deleteDoc, addDoc,
          query, orderBy, limit, runTransaction, serverTimestamp, writeBatch, updateDoc }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getStorage, ref as sRef, uploadBytes, getDownloadURL, deleteObject }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 /* ═════════ 관리자 설정 ═════════
    관리자 이메일 — 본인 계정으로 바꾸세요. (Firestore 규칙의 isAdmin에도 동일하게!)
@@ -704,7 +737,9 @@ let dirty = false;
 let quotesCache = [];
 let currentUpdatedAt = null;   // 불러온 견적의 최종수정 시각(ms) — 동시편집 충돌 감지
 let listStatus = "전체";
-let db = null, auth = null;
+let standards = [], stdSeries = "전체", stdLoaded = false;
+const STD_SERIES = ["전체","MS1xx","MS2xx","MS3xx","MS5xx","MS6xx","MS7xx","MS8xx","MS9xx"];
+let db = null, auth = null, storage = null;
 
 /* ───────── 유틸 ───────── */
 const $ = id => document.getElementById(id);
@@ -753,6 +788,7 @@ if(configMissing){
   const app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = getFirestore(app);
+  storage = getStorage(app);
   onAuthStateChanged(auth, async user=>{
     if(!user){
       $("authGate").style.display="flex";
@@ -1593,10 +1629,113 @@ function openPreview(){
 function closePreview(){ $("overlay").classList.remove("show"); }
 $("overlay").addEventListener("click",e=>{ if(e.target.id==="overlay") closePreview(); });
 $("listOverlay").addEventListener("click",e=>{ if(e.target.id==="listOverlay") closeList(); });
+$("stdOverlay").addEventListener("click",e=>{ if(e.target.id==="stdOverlay") closeStd(); });
 $("adminOverlay").addEventListener("click",e=>{ if(e.target.id==="adminOverlay") closeAdmin(); });
 window.addEventListener("beforeunload",e=>{ if(dirty){ e.preventDefault(); e.returnValue=""; } });
 
 /* ───────── 전역 노출 (onclick 핸들러용) ───────── */
+/* ───────── 규격자료실 (MS 표준 원문) ───────── */
+function parseStdName(filename){
+  const base = String(filename).replace(/\.pdf$/i,"").trim();
+  const codeM = base.match(/^(MS\s?\d+[-\s]?\d+)/i);
+  const code = codeM ? codeM[1].toUpperCase().replace(/\s+/g,"") : base.toUpperCase();
+  const revM = base.match(/Rev\.?\s*([\w().]+?)$/i) || base.match(/Rev\.?\s*([\w()]+)/i);
+  const rev = revM ? revM[1].replace(/\.$/,"") : "";
+  const numM = code.match(/MS(\d)/);
+  const series = numM ? "MS"+numM[1]+"xx" : "기타";
+  return { code, rev, series };
+}
+function fmtSize(b){ b=+b||0; return b>=1048576 ? (b/1048576).toFixed(1)+"MB" : Math.max(1,Math.round(b/1024))+"KB"; }
+
+async function loadStandards(){
+  if(!db) return;
+  try{
+    const snap = await getDocs(query(collection(db,"quote_standards"), orderBy("code")));
+    standards = snap.docs.map(d=>({id:d.id,...d.data()}));
+  }catch(e){ console.error(e); standards=[]; }
+}
+async function openStd(){
+  $("stdAdminBar").style.display = isAdmin ? "flex" : "none";
+  if(!stdLoaded){ await loadStandards(); stdLoaded=true; }
+  renderStdSeries(); renderStd();
+  $("stdOverlay").classList.add("show");
+}
+function closeStd(){ $("stdOverlay").classList.remove("show"); }
+function setStdSeries(s){ stdSeries=s; renderStdSeries(); renderStd(); }
+function renderStdSeries(){
+  $("stdSeriesFilter").innerHTML = STD_SERIES.map(s=>{
+    const n = s==="전체" ? standards.length : standards.filter(x=>x.series===s).length;
+    return `<button class="${s===stdSeries?"on":""}" onclick="setStdSeries('${s}')">${s}${s!=="전체"&&n?` (${n})`:""}</button>`;
+  }).join("");
+}
+function renderStd(){
+  const kw = $("stdSearch").value.trim().toLowerCase();
+  const rows = standards.filter(s=>{
+    const serOk = stdSeries==="전체" || s.series===stdSeries;
+    const text = ((s.code||"")+" "+(s.filename||"")+" "+(s.rev||"")).toLowerCase();
+    return serOk && (!kw || text.includes(kw));
+  });
+  $("stdEmpty").style.display = rows.length ? "none" : "block";
+  $("stdBody").innerHTML = rows.map(s=>`
+    <tr class="row">
+      <td data-label="규격코드" style="font-family:var(--mono);font-weight:700;color:var(--fiti-blue)">${esc(s.code||"—")}</td>
+      <td data-label="Rev" style="font-family:var(--mono);font-size:11.5px;color:var(--ink-soft)">${esc(s.rev||"-")}</td>
+      <td data-label="파일명" style="font-size:11.5px;color:var(--ink-soft)">${esc(s.filename||"")}</td>
+      <td data-label="크기" class="num" style="color:var(--ink-soft)">${fmtSize(s.size)}</td>
+      <td class="acts" onclick="event.stopPropagation()">
+        <button class="btn-primary" style="border-color:var(--fiti-teal)!important;background:var(--fiti-teal)!important;color:#fff" onclick="openStdFile('${esc(s.id)}')">열기</button>
+        ${isAdmin?`<button class="danger" onclick="deleteStandard('${esc(s.id)}')">삭제</button>`:""}
+      </td>
+    </tr>`).join("");
+}
+function openStdFile(id){
+  const s = standards.find(x=>x.id===id);
+  if(!s) return;
+  if(s.url){ window.open(s.url,"_blank","noopener"); return; }
+  // url 미저장(구버전) → 즉석 발급
+  getDownloadURL(sRef(storage, s.path)).then(u=>window.open(u,"_blank","noopener"))
+    .catch(e=>{ console.error(e); toast("파일을 열 수 없습니다."); });
+}
+async function uploadStandards(fileList){
+  if(!isAdmin){ toast("관리자만 업로드할 수 있습니다."); return; }
+  const files = Array.from(fileList||[]).filter(f=>/\.pdf$/i.test(f.name));
+  if(!files.length){ toast("PDF 파일이 없습니다."); return; }
+  const statusEl = $("stdUploadStatus");
+  let done=0, fail=0;
+  for(const file of files){
+    statusEl.textContent = `업로드 중… ${done+1}/${files.length} (${file.name})`;
+    try{
+      const meta = parseStdName(file.name);
+      const id = file.name.replace(/[#$\[\]/]/g,"_"); // Firestore 문서ID 금지문자 치환
+      const path = "standards/"+id;
+      const snap = await uploadBytes(sRef(storage, path), file, {contentType:"application/pdf"});
+      const url = await getDownloadURL(snap.ref);
+      await setDoc(doc(db,"quote_standards",id), {
+        code: meta.code, rev: meta.rev, series: meta.series,
+        filename: file.name, path, url, size: file.size,
+        updatedAt: serverTimestamp(), updatedBy: auth.currentUser?.email||""
+      });
+      done++;
+    }catch(e){ console.error("업로드 실패:", file.name, e); fail++; }
+  }
+  statusEl.textContent = `완료 · 성공 ${done}건${fail?` · 실패 ${fail}건`:""}`;
+  toast(`규격 업로드 완료 (성공 ${done}, 실패 ${fail})`);
+  $("stdFileInput").value = "";
+  await loadStandards(); renderStdSeries(); renderStd();
+}
+async function deleteStandard(id){
+  if(!isAdmin) return;
+  const s = standards.find(x=>x.id===id); if(!s) return;
+  if(!confirm(`'${s.code} ${s.rev||""}' (${s.filename}) 규격을 삭제할까요?`)) return;
+  try{
+    await deleteDoc(doc(db,"quote_standards",id));
+    try{ await deleteObject(sRef(storage, s.path)); }catch(e){ /* 파일 이미 없음 무시 */ }
+    standards = standards.filter(x=>x.id!==id);
+    renderStdSeries(); renderStd();
+    toast("삭제되었습니다.");
+  }catch(e){ console.error(e); toast("삭제 실패"); }
+}
+
 Object.assign(window,{
   doLogin, doSignup, doGoogleLogin, doLogout, authSubmit, toggleAuthMode,
   openAdmin, closeAdmin, setApproval, removeUser,
@@ -1605,7 +1744,8 @@ Object.assign(window,{
   newQuote, saveQuote, openList, closeList, setListStatus,
   pickQuote, duplicateQuote, deleteQuote, setCat, addLine, removeLine, upd, updWon,
   recalc, markDirty, openPreview, closePreview, renderLedger, renderList,
-  refreshFees, refreshTemplates, addExtraFromSel, setSubMult
+  refreshFees, refreshTemplates, addExtraFromSel, setSubMult,
+  openStd, closeStd, setStdSeries, renderStd, openStdFile, uploadStandards, deleteStandard
 });
 
 /* ───────── 초기 화면 ───────── */
