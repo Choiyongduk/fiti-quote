@@ -1,0 +1,11 @@
+# 참조용 PDF 원본·아카이브 (앱 소스 아님 / 용량 큼 / Storage로 업로드됨)
+규격/
+견적서양식/
+압축_제거백업_구버전부속/
+*.pdf
+_compress_summary.json
+_extract_manifest.txt
+
+# OS
+Thumbs.db
+.DS_Store
