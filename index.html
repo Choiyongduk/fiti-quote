@@ -296,6 +296,15 @@
     .sheet-shell{width:auto}
     .sheet-tools{display:none}
     .sheet{box-shadow:none;padding:10mm 12mm}
+    /* 좁은 인쇄 폭이 모바일(760px) 규칙에 걸려 1열로 무너지는 것 방지 — 데스크톱 양식 고정 */
+    .sheet .doc-title{font-size:30px}
+    .sheet-headgrid{grid-template-columns:1fr 1fr;gap:0 26px}
+    .sheet-bottom{grid-template-columns:1fr 360px}
+    .amount-band{flex-wrap:nowrap;gap:14px;font-size:13px}
+    .amount-band .won{margin-left:auto}
+    table.sheet-table{font-size:11.5px}
+    table.sheet-table th{padding:6px 5px}
+    table.sheet-table td{padding:5.5px 6px}
   }
 
   /* ───────── 견적 목록 ───────── */
