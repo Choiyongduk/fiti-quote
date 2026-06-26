@@ -290,11 +290,11 @@
   }
 
   @media print{
-    body *{visibility:hidden}
-    .overlay{display:block;position:static;background:#fff;padding:0;overflow:visible}
+    /* 본문·닫힌 오버레이가 빈 페이지를 만들지 않도록 미리보기 창만 남김 */
+    body > *{display:none!important}
+    #overlay{display:block!important;position:static;background:#fff;padding:0;overflow:visible}
     .sheet-shell{width:auto}
     .sheet-tools{display:none}
-    .sheet,.sheet *{visibility:visible}
     .sheet{box-shadow:none;padding:10mm 12mm}
   }
 
